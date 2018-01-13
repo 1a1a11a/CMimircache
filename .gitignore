@@ -1,0 +1,10 @@
+# 1a1a11a
+*INTERNAL*
+*deprecated*
+*.DS_Store*
+*.bak
+*.clean
+*.nogit*
+new*.*
+akamai.*
+test.c
