@@ -27,7 +27,7 @@ extern "C"
 #endif
 
 
-// SUPPRESS_FUNCTION_NO_USE_WARNING(profiler_thread_temp);
+SUPPRESS_FUNCTION_NO_USE_WARNING(traverse_trace);
 
 
 static void profiler_thread(gpointer data, gpointer user_data){
