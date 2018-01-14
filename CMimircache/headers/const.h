@@ -9,7 +9,7 @@
 
 
 
-#ifndef CONST_H 
+#ifndef CONST_H
 #define CONST_H
 
 
@@ -17,7 +17,7 @@
 extern "C" {
 #endif
 
-    
+
 #define cache_line_label_size 128
 #define CACHE_LINE_LABEL_SIZE 128
 #define FILE_LOC_STR_SIZE 1024
@@ -34,27 +34,28 @@ extern "C" {
 
 #ifndef _GNU_SOURCE
     #define _GNU_SOURCE             /* for sched in utils.h */
-#endif 
-    
-    
-    
+#endif
+
+
+
 
 
 
 #define NORMAL_REUSE_DISTANCE                           1
 #define FUTURE_REUSE_DISTANCE                           2
-#define NORMAL_DISTANCE                                 3 
-#define REUSE_TIME                                      4 
+#define NORMAL_DISTANCE                                 3
+#define REUSE_TIME                                      4
 
-//#define DEFAULT_SECTOR_SIZE                             512 
+//#define DEFAULT_SECTOR_SIZE                             512
+
+#define SUPPRESS_FUNCTION_NO_USE_WARNING(f) (void)f
 
 
 
-
-//#define SANITY_CHECK 1 
+//#define SANITY_CHECK 1
 //#define _DEBUG
 #define ML
-#undef ML 
+#undef ML
 
 #undef __DEBUG__
 #undef _DEBUG
@@ -84,14 +85,8 @@ extern "C" {
     fprintf(stderr,  __VA_ARGS__);}
 
 
-
-
-#define SUPPRESS_FUNCTION_NO_USE_WARNING(f) (void)f
-
-
-    
 #ifdef __cplusplus
     }
 #endif
 
-#endif 
+#endif

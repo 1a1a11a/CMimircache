@@ -27,9 +27,6 @@ extern "C"
 #endif
 
 
-SUPPRESS_FUNCTION_NO_USE_WARNING(traverse_trace);
-
-
 static void profiler_thread(gpointer data, gpointer user_data){
     mt_param_gp_t* params = (mt_param_gp_t*) user_data;
 
