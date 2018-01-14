@@ -45,12 +45,26 @@ typedef struct{
 
 
 
-partition_t* init_partition_t(uint8_t n_partitions, uint64_t cache_size);
+partition_t* init_partition_t(
+                            uint8_t n_partitions,
+                            uint64_t cache_size
+                            );
+
 void free_partition_t(partition_t *partition);
 
 
-partition_t* get_partition(reader_t* reader, struct cache* cache, uint8_t n_partitions);
-return_res** profiler_partition(reader_t* reader_in, struct_cache* cache_in, int num_of_threads_in, int bin_size_in);
+partition_t* get_partition(
+                           reader_t* reader,
+                           struct cache* cache,
+                           uint8_t n_partitions
+                           );
+
+return_res_t** profiler_partition(
+                                  reader_t* reader_in,
+                                  struct_cache* cache_in,
+                                  int num_of_threads_in,
+                                  int bin_size_in
+                                  );
 
 
 #ifdef __cplusplus
