@@ -1,7 +1,5 @@
-# CMake 最低版本号要求
 cmake_minimum_required (VERSION 2.8)
 
-# 项目信息
 project (CMimircache)
 set (PROJECT_WEB "http://mimircache.info")
 set (CMimircache_VERSION_MAJOR 0)
@@ -40,16 +38,10 @@ message(STATUS "glib found? " ${GLib_FOUND})
 message(STATUS "LIBS = " ${LIBS})
 message(STATUS "glib header = " ${GLib_INCLUDE_DIRS})
 
-
-
-# 查找目录下的所有源文件, 并将名称保存到 DIR_SRCS 变量
 aux_source_directory(. dirCMimircache)
-# aux_source_directory(. DIR_SRCS)
-
 message(STATUS "CMimircache sources = " ${dirCMimircache})
 
 
-# 添加子目录
 add_subdirectory(cache)
 add_subdirectory(cacheReader)
 add_subdirectory(dataStructure)
@@ -57,10 +49,8 @@ add_subdirectory(profiler)
 add_subdirectory(utils)
 
 
-# 指定生成目标
 add_executable(CMimircache ${dirCMimircache})
 
-# 添加链接库
 target_link_libraries(CMimircache cache cacheReader profiler dataStructure utils m ${LIBS} ${CMAKE_THREAD_LIBS_INIT} -lpthread)
 
 
