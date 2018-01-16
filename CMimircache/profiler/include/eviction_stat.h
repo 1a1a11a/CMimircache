@@ -14,9 +14,10 @@
 #include <math.h>
 #include <glib.h>
 #include "reader.h"
-#include "glib_related.h"
-#include "cache.h" 
+#include "cleaner.h"
+#include "cache.h"
 #include "const.h"
+#include "splay.h"
 
 
 
@@ -30,10 +31,10 @@ typedef enum{
     evict_reuse_dist,
     evict_freq,
     evict_freq_accumulatve,
-    
+
     evict_data_classification,
     other
-    
+
 
 }evict_stat_type;
 

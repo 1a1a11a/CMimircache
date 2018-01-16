@@ -12,11 +12,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <glib.h>
-#include <math.h> 
+#include <math.h>
 #include "splay.h"
 #include "reader.h"
-#include "glib_related.h" 
-#include "const.h" 
+#include "cleaner.h"
+#include "const.h"
 #include "pqueue.h"
 
 #ifdef __cplusplus
@@ -52,7 +52,7 @@ gint64* get_reuse_time(reader_t* reader);
 double* get_hit_rate_seq_shards(reader_t* reader,
                                 gint64 size,
                                 double sample_ratio,
-                                gint64 correction); 
+                                gint64 correction);
 
 guint64* get_hitcount_withsize_seq(reader_t* reader,
                                    gint64 size,
@@ -71,7 +71,7 @@ void cal_save_reuse_dist(reader_t * const reader,
 
 void load_reuse_dist(reader_t * const reader,
                      const char * const load_file_loc,
-                     const int reuse_type); 
+                     const int reuse_type);
 
 
 #ifdef __cplusplus

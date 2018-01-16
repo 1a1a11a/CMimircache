@@ -1,5 +1,5 @@
 //
-//  heatmat_related.c
+//  profilerUtils.c
 //  mimircache
 //
 //  Created by Juncheng on 5/24/16.
@@ -8,21 +8,22 @@
 
 
 
-#include "heatmap.h"
+#include <math.h>
 #include "csvReader.h"
 #include "binaryReader.h"
+#include "profilerUtils.h"
 
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif
-    
-    
-    
-    
+
+
+
+
     double get_log_base(guint64 max, guint64 expect_result){
-        
+
         double base = 10;
         double result, prev_result = expect_result;
         while (1){
@@ -33,12 +34,11 @@ extern "C"
             base = (base - 1)/2 + 1;
         }
     }
-    
+
     static inline gint process_one_element_last_access(cache_line* cp,
                                                        GHashTable* hash_table,
                                                        guint64 ts);
-    
-    
+
     /*-----------------------------------------------------------------------------
      *
      * get_last_access_dist_seq --
@@ -64,21 +64,21 @@ extern "C"
      *
      *-----------------------------------------------------------------------------
      */
-    
+
     GSList* get_last_access_dist_seq(reader_t* reader,
                                      void (*funcPtr)(reader_t*, cache_line*)){
-        
-        
+
+
         GSList* list= NULL;
-        
+
         if (reader->base->total_num == -1)
             get_num_of_req(reader);
-        
+
         // create cache lize struct and initialization
         cache_line* cp = new_cacheline();
         cp->type = reader->base->data_type;
         cp->block_unit_size = (size_t) reader->base->block_unit_size;
-        
+
         // create hashtable
         GHashTable * hash_table;
         if (cp->type == 'l'){
@@ -95,10 +95,10 @@ extern "C"
             ERROR("unknown data type: %c\n", cp->type);
             abort();
         }
-        
+
         guint64 ts = 0;
         gint dist;
-        
+
         if (funcPtr == read_one_element){
             read_one_element(reader, cp);
         }
@@ -113,7 +113,7 @@ extern "C"
             ERROR("unknown function pointer received in heatmap\n");
             abort();
         }
-        
+
         while (cp->valid){
             dist = process_one_element_last_access(cp, hash_table, ts);
             list = g_slist_prepend(list, GINT_TO_POINTER(dist));
@@ -125,16 +125,16 @@ extern "C"
             if (params->has_header)
                 list = g_slist_remove(list, list->data);
         }
-        
-        
+
+
         // clean up
         g_free(cp);
         g_hash_table_destroy(hash_table);
         reset_reader(reader);
         return list;
     }
-    
-    
+
+
     /*-----------------------------------------------------------------------------
      *
      * process_one_element_last_access --
@@ -155,7 +155,7 @@ extern "C"
      *
      *-----------------------------------------------------------------------------
      */
-    
+
     static inline gint process_one_element_last_access(cache_line* cp,
                                                        GHashTable* hash_table,
                                                        guint64 ts){
@@ -171,7 +171,7 @@ extern "C"
                 g_hash_table_insert(hash_table,
                                     g_strdup((gchar*)(cp->item_p)),
                                     (gpointer)value);
-            
+
             else if (cp->type == 'l'){
                 guint64* key = g_new(guint64, 1);
                 *key = *(guint64*)(cp->item_p);
@@ -192,18 +192,18 @@ extern "C"
         }
         return ret;
     }
-    
-    
+
+
     GArray* get_bp_vtime(reader_t* reader,
                          gint64 time_interval,
                          gint64 num_of_piexls){
         /*
          return a GArray of break points, including the last break points
          */
-        
+
         if (reader->base->total_num == -1)
             get_num_of_req(reader);
-        
+
         if (reader->sdata->break_points){
             if (reader->sdata->break_points->mode == 'v' &&
                 (long) reader->sdata->break_points->time_interval == time_interval )
@@ -213,7 +213,7 @@ extern "C"
                 free(reader->sdata->break_points);
             }
         }
-        
+
         gint i;
         gint array_size = (gint) num_of_piexls;
         if (array_size==-1)
@@ -221,15 +221,15 @@ extern "C"
         else
             time_interval = (gint) ceil((double) reader->base->total_num/num_of_piexls + 1);
         //    array_size ++ ;
-        
+
         GArray* break_points = g_array_sized_new(FALSE, FALSE, sizeof(guint64), array_size);
         for (i=0; i<array_size-1; i++){
             guint64 value = i * time_interval;
             g_array_append_val(break_points, value);
         }
         g_array_append_val(break_points, reader->base->total_num);
-        
-        
+
+
         if (break_points->len > 10000){
             WARNING("%snumber of pixels in one dimension is larger than 10000, "
                     "exact size: %d, it may take a very long time, if you didn't "
@@ -242,18 +242,18 @@ extern "C"
                     "intend to do this, please try with a smaller time stamp%s\n",
                     KRED, break_points->len, KRESET);
         }
-        
+
         struct break_point* bp = g_new(struct break_point, 1);
         bp->mode = 'v';
         bp->time_interval = time_interval;
         bp->array = break_points;
         reader->sdata->break_points = bp;
-        
+
         reset_reader(reader);
         return break_points;
     }
-    
-    
+
+
     GArray* get_bp_rtime(reader_t* reader,
                          gint64 time_interval,
                          gint64 num_of_piexls){
@@ -281,12 +281,12 @@ extern "C"
                 exit(1);
             }
         }
-        
-        
+
+
         if (reader->base->total_num == -1)
             get_num_of_req(reader);
-        
-        
+
+
         if (reader->sdata->break_points){
             if (reader->sdata->break_points->mode == 'r' &&
                 (long) reader->sdata->break_points->time_interval == time_interval ){
@@ -297,22 +297,22 @@ extern "C"
                 free(reader->sdata->break_points);
             }
         }
-        
+
         guint64 previous_time = 0;
         GArray* break_points = g_array_new(FALSE, FALSE, sizeof(guint64));
-        
+
         // create cache line struct and initialization
         cache_line* cp = new_cacheline();
-        
+
         guint64 num = 0;
-        
+
         reset_reader(reader);
         read_one_element(reader, cp);
         previous_time = cp->real_time;
         g_array_append_val(break_points, num);
-        
-        
-        
+
+
+
         if (num_of_piexls != -1 && time_interval == -1){
             reader_set_read_pos(reader, 1);
             read_one_element_above(reader, cp);
@@ -320,8 +320,8 @@ extern "C"
             reader_set_read_pos(reader, 0);
             read_one_element(reader, cp);
         }
-        
-        
+
+
         while (cp->valid){
             if (cp->real_time - previous_time > (guint64)time_interval){
                 g_array_append_val(break_points, num);
@@ -332,8 +332,8 @@ extern "C"
         }
         if ((gint64)g_array_index(break_points, guint64, break_points->len-1) != reader->base->total_num)
             g_array_append_val(break_points, reader->base->total_num);
-        
-        
+
+
         if (break_points->len > 10000){
             WARNING("%snumber of pixels in one dimension is larger than 10000, "
                     "exact size: %d, it may take a very long time, if you didn't "
@@ -346,20 +346,20 @@ extern "C"
                     "intend to do this, please try with a smaller time stamp%s\n",
                     KRED, break_points->len, KRESET);
         }
-        
+
         struct break_point* bp = g_new(struct break_point, 1);
         bp->mode = 'r';
         bp->time_interval = time_interval;
         bp->array = break_points;
         reader->sdata->break_points = bp;
-        
+
         // clean up
         g_free(cp);
         reset_reader(reader);
         return break_points;
     }
-    
-    
+
+
 #ifdef __cplusplus
 }
 #endif

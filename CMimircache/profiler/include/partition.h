@@ -15,7 +15,7 @@
 #include <glib.h>
 #include <string.h>
 #include <stdint.h>
-#include "glib_related.h"
+#include "cleaner.h"
 #include "cache.h"
 #include "reader.h"
 #include "const.h"

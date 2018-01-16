@@ -1,17 +1,17 @@
 //
-//  glib_related.h
+//  cleaner.h
 //  LRUAnalyzer
 //
 //  Created by Juncheng on 5/26/16.
 //  Copyright © 2016 Juncheng. All rights reserved.
 //
 
-#ifndef glib_related_h
-#define glib_related_h
+#ifndef cleaner_h
+#define cleaner_h
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <glib.h> 
+#include <glib.h>
 
 #ifdef __cplusplus
 extern "C"
@@ -31,4 +31,4 @@ void pqueue_node_destroyer(gpointer data);
 #endif
 
 
-#endif /* glib_related_h */
+#endif /* cleaner_h */

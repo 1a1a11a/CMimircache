@@ -1,5 +1,4 @@
-project('mimircache', ['c', 'cpp'])
-#project('mimircache')
+project('CMimircache', ['c'])
 
 
 ######################### dependency #########################
@@ -10,69 +9,133 @@ cc = meson.get_compiler('c')
 m_dep = cc.find_library('m', required : true)
 
 
+CMimircache_BASE_PATH =  '.'
+
 ########################## sources ###########################
-src_mimircache		= ['test.c']
+src_CMimircache                 = ['mimircache.c']
 
-src_cacheReader 	= ['cacheReader/binaryReader.c', 'cacheReader/csvReader.c', 'cacheReader/libcsv.c', 
-						'cacheReader/reader.c', 'cacheReader/vscsiReader.c']
+src_CMimircache_cacheReader     = [CMimircache_BASE_PATH + '/cacheReader/binaryReader.c',
+                                    CMimircache_BASE_PATH + '/cacheReader/csvReader.c',
+                                    CMimircache_BASE_PATH + '/cacheReader/libcsv.c',
+                                    CMimircache_BASE_PATH + '/cacheReader/reader.c',
+                                    CMimircache_BASE_PATH + '/cacheReader/vscsiReader.c']
 
-src_cache 			= ['cache/AMP.c', 'cache/LFUFast.c', 'cache/LRUSize.c', 'cache/PG.c', 'cache/Score.c', 'cache/ARC.c', 
-						'cache/LRFU.c', 'cache/LRU_K.c', 'cache/Random.c', 'cache/cache.c', 'cache/FIFO.c', 'cache/LRU.c', 
-						'cache/MRU.c', 'cache/SLRU.c', 'cache/mimir.c', 'cache/LFU.c', 'cache/LRUPage.c', 'cache/Optimal.c', 
-						'cache/SLRUML.c']
+src_CMimircache_cache           = [CMimircache_BASE_PATH + '/cache/AMP.c',
+                                    CMimircache_BASE_PATH + '/cache/LFUFast.c',
+                                    CMimircache_BASE_PATH + '/cache/LRUSize.c',
+                                    CMimircache_BASE_PATH + '/cache/PG.c',
+                                    CMimircache_BASE_PATH + '/cache/ARC.c',
+                                    CMimircache_BASE_PATH + '/cache/LRFU.c',
+                                    CMimircache_BASE_PATH + '/cache/LRU_K.c',
+                                    CMimircache_BASE_PATH + '/cache/Random.c',
+                                    CMimircache_BASE_PATH + '/cache/cache.c',
+                                    CMimircache_BASE_PATH + '/cache/FIFO.c',
+                                    CMimircache_BASE_PATH + '/cache/LRU.c',
+                                    CMimircache_BASE_PATH + '/cache/LRUPage.c',
+                                    CMimircache_BASE_PATH + '/cache/MRU.c',
+                                    CMimircache_BASE_PATH + '/cache/SLRU.c',
+                                    CMimircache_BASE_PATH + '/cache/Mithril.c',
+                                    CMimircache_BASE_PATH + '/cache/LFU.c',
+                                    CMimircache_BASE_PATH + '/cache/Optimal.c']
 
-src_profiler 		= ['profiler/LRUProfiler.c', 'profiler/eviction_stat.c', 'profiler/generalProfiler.c', 'profiler/heatmap.c', 
-						'profiler/heatmap_related.c', 'profiler/heatmap_thread.c', 'profiler/partition.c', 'profiler/splay.c'] 
+src_CMimircache_profiler        = [CMimircache_BASE_PATH + '/profiler/LRUProfiler.c',
+                                    CMimircache_BASE_PATH + '/profiler/profilerUtils.c',
+                                    CMimircache_BASE_PATH + '/profiler/eviction_stat.c',
+                                    CMimircache_BASE_PATH + '/profiler/partition.c',
+                                    CMimircache_BASE_PATH + '/profiler/generalProfiler.c',
+                                    CMimircache_BASE_PATH + '/profiler/heatmap.c',
+                                    CMimircache_BASE_PATH + '/profiler/heatmapThreadLRU.c',
+                                    CMimircache_BASE_PATH + '/profiler/heatmapThreadNonLRU.c']
 
-src_utils 			= ['utils/glib_related.c', 'utils/logging.c', 'utils/murmurhash3.c', 'utils/pqueue.c', 'utils/utils.c']
+src_CMimircache_ds              = [CMimircache_BASE_PATH + '/dataStructure/pqueue.c',
+                                    CMimircache_BASE_PATH + '/dataStructure/splay.c']
 
-src_akamaiSimulator = ['akamaiSimulator/cacheLayer.cpp', 'akamaiSimulator/cacheLayerThread.cpp', 'akamaiSimulator/cacheServer.cpp',
-						'akamaiSimulator/cacheServerThread.cpp', 'akamaiSimulator/consistentHashRing.cpp', 
-						'akamaiSimulator/simulator.cpp', 'akamaiSimulator/simulatorMain.cpp'] 
+src_CMimircache_utils           = [CMimircache_BASE_PATH + '/utils/cleaner.c',
+                                    CMimircache_BASE_PATH + '/utils/logging.c',
+                                    CMimircache_BASE_PATH + '/utils/murmurhash3.c',
+                                    CMimircache_BASE_PATH + '/utils/utils.c']
 
-src_libketama		= ['akamaiSimulator/libketama/ketama.c', 'akamaiSimulator/libketama/md5.c'] 
-
-
-# for f in `ls */*.c`; do echo -n "'$f', "; done
 
 ########################## headers ##########################
-inc_mimircache 				= 		include_directories('headers') 
-inc_mimircache_cache 		= 		include_directories('cache/include')
-inc_mimircache_cacheReader	= 		include_directories('cacheReader/include') 
-inc_mimircache_profiler		= 		include_directories('profiler/include') 
-inc_mimircache_utils		= 		include_directories('utils/include') 
-inc_akamaiSimulator 		= 		include_directories('akamaiSimulator/include')
-inc_libketama 				= 		include_directories('akamaiSimulator/libketama/include')
+inc_CMimircache                 =       include_directories(CMimircache_BASE_PATH + '/headers')
+inc_CMimircache_cache           =       include_directories(CMimircache_BASE_PATH + '/cache/include')
+inc_CMimircache_cacheReader     =       include_directories(CMimircache_BASE_PATH + '/cacheReader/include')
+inc_CMimircache_ds              =       include_directories(CMimircache_BASE_PATH + '/dataStructure/include')
+inc_CMimircache_profiler        =       include_directories(CMimircache_BASE_PATH + '/profiler/include')
+inc_CMimircache_utils           =       include_directories(CMimircache_BASE_PATH + '/utils/include')
 
 
-###################### target: library ####################### 
-lib_cache = static_library('cache', sources:src_cache, dependencies: [glib_dep, thread_dep, m_dep], 
-							include_directories: [inc_mimircache, inc_mimircache_cache, inc_mimircache_utils])
+###################### target: library #######################
+lib_CMimircache_cache       = static_library('cache',
+                                             sources: src_CMimircache_cache,
+                                             dependencies: [glib_dep, thread_dep, m_dep],
+                                             include_directories: [inc_CMimircache,
+                                                                    inc_CMimircache_ds,
+                                                                   inc_CMimircache_cache,
+                                                                   inc_CMimircache_cacheReader,
+                                                                   inc_CMimircache_profiler,
+                                                                   inc_CMimircache_utils
+                                                                  ]
+                                            )
 
-lib_cacheReader = static_library('cacheReader', sources:src_cacheReader, dependencies: [glib_dep, thread_dep, m_dep], 
-							include_directories: [inc_mimircache, inc_mimircache_cache, inc_mimircache_cacheReader, inc_mimircache_utils])
-
-lib_profiler = static_library('profiler', sources:src_profiler, dependencies: [glib_dep, thread_dep, m_dep], 
-							include_directories: [inc_mimircache, inc_mimircache_cache, inc_mimircache_cacheReader,
-												inc_mimircache_profiler, inc_mimircache_utils])
-
-lib_utils = static_library('utils', sources:src_utils, dependencies: [glib_dep, thread_dep, m_dep], 
-							include_directories: [inc_mimircache, inc_mimircache_cache, inc_mimircache_utils])
-
-lib_ketama = static_library('libketama', sources:src_libketama, dependencies: [thread_dep, m_dep], 
-							include_directories: inc_libketama) 
-
-
-###################### target: executable ####################### 
-executable('mimircache', sources:[src_mimircache], link_with: [lib_cache, lib_cacheReader, lib_profiler, lib_utils], 
-	dependencies: [glib_dep, thread_dep, m_dep], include_directories: [inc_mimircache, inc_mimircache_cache, 
-	inc_mimircache_cacheReader, inc_mimircache_profiler, inc_mimircache_utils])
-
-executable('akamaiSimulator', sources:[src_akamaiSimulator], dependencies: [glib_dep, thread_dep, m_dep], 
-	link_with: [lib_cache, lib_cacheReader, lib_profiler, lib_utils, lib_ketama], 
-	include_directories: [inc_mimircache, inc_mimircache_cache, inc_mimircache_cacheReader, inc_mimircache_profiler, 
-							inc_mimircache_utils, inc_akamaiSimulator, inc_libketama]) 
+lib_CMimircache_ds       = static_library('dataStructure',
+                                             sources: src_CMimircache_ds,
+                                             dependencies: [glib_dep, thread_dep, m_dep],
+                                             include_directories: [inc_CMimircache,
+                                                                    inc_CMimircache_ds
+                                                                  ]
+                                            )
 
 
 
-# rm * -r; meson --buildtype=debug ..; ninja; 
+lib_CMimircache_cacheReader = static_library('cacheReader',
+                                             sources: src_CMimircache_cacheReader,
+                                             dependencies: [glib_dep, thread_dep, m_dep],
+                                             include_directories: [inc_CMimircache,
+                                                                   inc_CMimircache_cache,
+                                                                   inc_CMimircache_cacheReader,
+                                                                   inc_CMimircache_utils
+                                                                  ]
+                                             )
+
+lib_CMimircache_profiler    = static_library('profiler',
+                                             sources: src_CMimircache_profiler,
+                                             dependencies: [glib_dep, thread_dep, m_dep],
+                                             include_directories: [inc_CMimircache,
+                                                                   inc_CMimircache_cache,
+                                                                   inc_CMimircache_cacheReader,
+                                                                   inc_CMimircache_profiler,
+                                                                   inc_CMimircache_ds,
+                                                                   inc_CMimircache_utils
+                                                                  ]
+                                             )
+
+lib_CMimircache_utils       = static_library('utils', sources: src_CMimircache_utils,
+                                             dependencies: [glib_dep, thread_dep, m_dep],
+                                             include_directories: [inc_CMimircache,
+                                                                   inc_CMimircache_cache,
+                                                                   inc_CMimircache_cacheReader,
+                                                                   inc_CMimircache_ds,
+                                                                   inc_CMimircache_utils
+                                                                   ]
+                                            )
+
+
+
+###################### target: executable #######################
+executable('CMimircache',
+            sources: [src_CMimircache],
+            dependencies: [glib_dep, thread_dep, m_dep],
+            link_with: [lib_CMimircache_cache, lib_CMimircache_cacheReader,
+                        lib_CMimircache_ds,
+                        lib_CMimircache_profiler, lib_CMimircache_utils
+                       ],
+            include_directories: [inc_CMimircache, inc_CMimircache_cache,
+                                  inc_CMimircache_cacheReader, inc_CMimircache_profiler,
+                                  inc_CMimircache_ds, inc_CMimircache_utils
+                                 ]
+          )
+
+
+
+# rm * -r; meson --buildtype=debug ..; ninja;

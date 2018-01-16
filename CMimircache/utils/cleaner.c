@@ -1,12 +1,12 @@
 //
-//  glib_related.c
+//  cleaner.c
 //  LRUAnalyzer
 //
 //  Created by Juncheng on 5/26/16.
 //  Copyright © 2016 Juncheng. All rights reserved.
 //
 
-#include "glib_related.h"
+#include "cleaner.h"
 #include "pqueue.h"
 
 
@@ -40,7 +40,7 @@ void pqueue_node_destroyer(gpointer data) {
 
 void ML_value_destroyer(gpointer data){
     ;
-    
+
 }
 
 

@@ -12,7 +12,7 @@
 
 #include "cache.h"
 #include "pqueue.h"
-#include "heatmap.h"
+#include "profilerUtils.h"
 
 
 

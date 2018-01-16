@@ -15,6 +15,7 @@ SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
 
 
 include_directories(headers)
+include_directories(dataStructure/include)
 include_directories(cache/include)
 include_directories(cacheReader/include)
 include_directories(profiler/include)
@@ -42,8 +43,8 @@ message(STATUS "glib header = " ${GLib_INCLUDE_DIRS})
 
 
 # 查找目录下的所有源文件, 并将名称保存到 DIR_SRCS 变量
-aux_source_directory(CMimircache dirCMimircache)
-aux_source_directory(. DIR_SRCS)
+aux_source_directory(. dirCMimircache)
+# aux_source_directory(. DIR_SRCS)
 
 message(STATUS "CMimircache sources = " ${dirCMimircache})
 
@@ -51,15 +52,16 @@ message(STATUS "CMimircache sources = " ${dirCMimircache})
 # 添加子目录
 add_subdirectory(cache)
 add_subdirectory(cacheReader)
-add_subdirectory(utils)
+add_subdirectory(dataStructure)
 add_subdirectory(profiler)
+add_subdirectory(utils)
 
 
 # 指定生成目标
-add_executable(CMimircacheBin ${dirCMimircache})
+add_executable(CMimircache ${dirCMimircache})
 
 # 添加链接库
-target_link_libraries(mimircache cache cacheReader profiler utils m ${LIBS} ${CMAKE_THREAD_LIBS_INIT} -lpthread)
+target_link_libraries(CMimircache cache cacheReader profiler dataStructure utils m ${LIBS} ${CMAKE_THREAD_LIBS_INIT} -lpthread)
 
 
 

@@ -23,7 +23,7 @@ extern "C" {
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
-#include "glib_related.h"
+#include "cleaner.h"
 #include "reader.h"
 #include "const.h"
 #include "macro.h"
@@ -42,24 +42,24 @@ typedef enum{
     e_ARC,
     e_SLRU,
     e_LRFU,
-    
+
     e_AMP,
     e_LRUPage,
     e_LRUSize,
     e_PG,
-    
+
     e_LRU_LFU,
     e_LRU_dataAware,
     e_ML,
     e_YJC,
-    
+
     e_akamai,
     e_new1,
-    e_new2, 
-    
+    e_new2,
+
     e_SLRUML,
     e_Score,
-    
+
     e_mimir,
     e_Mithril,
 }cache_type;
@@ -79,7 +79,7 @@ struct cache_core{
     void                (*destroy_unique)(struct cache* );
     gboolean            (*add_element)(struct cache*, cache_line*);
     gboolean            (*check_element)(struct cache*, cache_line*);
-    
+
     // newly added 0912, may not work for all cache
     void                (*__insert_element)(struct cache*, cache_line*);
     void                (*__update_element)(struct cache*, cache_line*);
@@ -87,15 +87,15 @@ struct cache_core{
     gpointer            (*__evict_with_return)(struct cache*, cache_line*);
     gint64              (*get_size)(struct cache*);         // get current size of used cache
     void                (*remove_element)(struct cache*, void*);
-    
+
     gboolean            (*add_element_only)(struct cache*, cache_line*);
     gboolean            (*add_element_withsize)(struct cache*, cache_line*);
     // only insert(and possibly evict) or update, do not conduct any other
     // operation, especially for those complex algorithm
-    
-    
-    
-    /** Jason: need to remove shared struct in cache and move all shared struct into reader **/ 
+
+
+
+    /** Jason: need to remove shared struct in cache and move all shared struct into reader **/
     int                 cache_debug_level;  // 0 not debug, 1: prepare oracle, 2: compare to oracle
     void*               oracle;
     void*               eviction_array;     // Optimal Eviction Array, either guint64* or char**
