@@ -60,30 +60,6 @@ extern "C" {
 #undef __DEBUG__
 #undef _DEBUG
 
-//#define __DEBUG__
-
-#if defined(__DEBUG__) || defined(_DEBUG)
-    #define DEBUG_MSG(...) \
-        {fprintf(stderr, "[DEBUG]: %s:%d:%s: ", __FILE__, __LINE__, __func__); \
-        fprintf(stderr, __VA_ARGS__);}
-#else
-    #define DEBUG_MSG(...) do { } while (0)
-#endif
-
-
-#define INFO(...) \
-    {fprintf(stderr, "[INFO]: %s%s:%d:%s: ", KYEL, __FILE__, __LINE__, __func__); \
-    fprintf(stderr, __VA_ARGS__); \
-    fprintf(stderr, "%s", KRESET); }
-
-#define WARNING(...) \
-    {fprintf(stderr, "[WARNING]: %s:%d:%s: ", __FILE__, __LINE__, __func__); \
-    fprintf(stderr, __VA_ARGS__);}
-
-#define ERROR(...) \
-    {fprintf(stderr, "[ERROR]: %s:%d:%s: ", __FILE__, __LINE__, __func__); \
-    fprintf(stderr,  __VA_ARGS__);}
-
 
 #ifdef __cplusplus
     }

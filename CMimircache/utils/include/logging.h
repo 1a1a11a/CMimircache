@@ -25,12 +25,13 @@
 #define SEVERE_LEVEL  5
 
 #ifndef LOGLEVEL
-    #define LOGLEVEL VERBOSE_LEVEL
+    #define LOGLEVEL INFO_LEVEL
 #endif // LOGLEVEL
 
 
 int log_header(int level, const char *file, int line);
 void log_lock(int);
+void print_stack_trace(void);
 
 
 #define LOGGING(level, FMT, ...) { \
@@ -42,37 +43,34 @@ void log_lock(int);
 }
 
 #if LOGLEVEL <= VERBOSE_LEVEL
-    #define verbose(FMT, ...) LOGGING(VERBOSE_LEVEL, FMT, ##__VA_ARGS__)
+    #define VERBOSE(FMT, ...) LOGGING(VERBOSE_LEVEL, FMT, ##__VA_ARGS__)
 #else
-    #define verbose(FMT, ...)
+    #define VERBOSE(FMT, ...)
 #endif
 
 #if LOGLEVEL <= DEBUG_LEVEL
-    #define debug(FMT, ...) LOGGING(DEBUG_LEVEL, FMT, ##__VA_ARGS__)
+    #define DEBUG(FMT, ...) LOGGING(DEBUG_LEVEL, FMT, ##__VA_ARGS__)
 #else
-    #define debug(FMT, ...)
+    #define DEBUG(FMT, ...)
 #endif
 
 #if LOGLEVEL <= INFO_LEVEL
-    #define info(FMT, ...) LOGGING(INFO_LEVEL, FMT, ##__VA_ARGS__)
+    #define INFO(FMT, ...) LOGGING(INFO_LEVEL, FMT, ##__VA_ARGS__)
 #else
-    #define info(FMT, ...)
+    #define INFO(FMT, ...)
 #endif
 
 #if LOGLEVEL <= WARNING_LEVEL
-    #define warning(FMT, ...) LOGGING(WARNING_LEVEL, FMT, ##__VA_ARGS__)
+    #define WARNING(FMT, ...) LOGGING(WARNING_LEVEL, FMT, ##__VA_ARGS__)
 #else
-    #define warning(FMT, ...)
+    #define WARNING(FMT, ...)
 #endif
 
 #if LOGLEVEL <= SEVERE_LEVEL
-    #define error_msg(FMT, ...) LOGGING(SEVERE_LEVEL, FMT, ##__VA_ARGS__)
+    #define ERROR(FMT, ...) LOGGING(SEVERE_LEVEL, FMT, ##__VA_ARGS__)
 #else
-    #define error_msg(FMT, ...)
+    #define ERROR(FMT, ...)
 #endif
 
-
-
-void print_stack_trace(); 
 
 #endif

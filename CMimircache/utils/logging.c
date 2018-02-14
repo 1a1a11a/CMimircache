@@ -53,14 +53,14 @@ int log_header(int level, const char *file, int line)
     curtime = tv.tv_sec;
     strftime(buffer, 30, "%m-%d-%Y %T", localtime(&curtime));
 
-    printf("%s %25s:%-4d ", buffer, strrchr(file, '/')+1, line);
+    printf("%s %16s:%-4d ", buffer, strrchr(file, '/')+1, line);
     printf("(tid=%zu): ", (unsigned long) pthread_self());
 
     return 1;
 }
 
 
-void print_stack_trace(){
+void print_stack_trace(void){
     
     void *array[10];
     size_t size;
@@ -72,7 +72,6 @@ void print_stack_trace(){
     fprintf(stderr, "stack trace: \n");
     backtrace_symbols_fd(array, size, STDERR_FILENO);
     exit(1);
-    
 }
 
 #ifdef __cplusplus

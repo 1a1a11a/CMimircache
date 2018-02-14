@@ -24,6 +24,7 @@
 
 
 #include "const.h"
+#include "logging.h"
 #include "libcsv.h"
 
 #ifdef __cplusplus
@@ -64,7 +65,7 @@ typedef struct break_point{
 }break_point_t;
 
 
-typedef struct{
+struct cache_line{
     gpointer item_p;
     char item[cache_line_label_size];
     char type;                              /* type of content can be either guint64(l) or char*(c) */
@@ -82,9 +83,11 @@ typedef struct{
     guint size_of_content;                           /* the size of mem area content points to */
     
     
-}cache_line;
+};
 
+typedef struct cache_line cache_line;
 typedef cache_line cache_line_t;
+typedef cache_line_t request_t;
 
 
 /* declare reader struct */
@@ -116,7 +119,8 @@ typedef struct reader_base{
                                              * when used in vscsiReaser and binaryReader, 
                                              * it is a const value, 
                                              * when it is used in plainReader or csvReader, 
-                                             * it is the size of last record */
+                                             * it is the size of last record, it does not 
+                                             * include LFCR or 0 */
     
     gint64 total_num;                       /* number of records */
     
@@ -240,7 +244,7 @@ static inline gboolean find_line_ending(reader_t *const reader,
         
         if (*line_end == NULL){
             if (size == MAX_LINE_LEN){
-                WARNING("line length exceeds %d characters\n", MAX_LINE_LEN);
+                WARNING("line length exceeds %d characters, now double max_line_len\n", MAX_LINE_LEN);
                 size *= 2;
             }
             else{

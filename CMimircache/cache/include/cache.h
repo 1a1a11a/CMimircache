@@ -28,6 +28,7 @@ extern "C" {
 #include "const.h"
 #include "macro.h"
 #include "errors.h"
+#include "logging.h" 
 
 
 typedef enum{

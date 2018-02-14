@@ -62,7 +62,7 @@ void __optimal_insert_element(struct_cache* optimal, cache_line* cp){
     node->data_type = cp->type;
     node->item = (gpointer)key;
     if ((gint)g_array_index(optimal_params->next_access, gint, optimal_params->ts) == -1)
-        node->pri.pri1 = G_MAXUINT64;
+        node->pri.pri1 = G_MAXINT64;
     else
         node->pri.pri1 = optimal_params->ts +
         (gint)g_array_index(optimal_params->next_access, gint, optimal_params->ts);
@@ -86,7 +86,7 @@ void __optimal_update_element(struct_cache* optimal, cache_line* cp){
     pqueue_pri_t pri;
     
     if ((gint) g_array_index(optimal_params->next_access, gint, optimal_params->ts) == -1)
-        pri.pri1 = G_MAXUINT64;
+        pri.pri1 = G_MAXINT64;
     else
         pri.pri1 = optimal_params->ts +
             (gint)g_array_index(optimal_params->next_access, gint, optimal_params->ts);
@@ -181,7 +181,7 @@ gboolean optimal_add_element_only(struct_cache* cache, cache_line* cp){
         __optimal_insert_element(cache, cp);
         if ( (long)g_hash_table_size( optimal_params->hashtable) > cache->core->size)
             __optimal_evict_element(cache, cp);
-        (optimal_params->ts) ++ ;
+        (optimal_params->ts) ++ ;   // needs to be after evict
         return FALSE;
     }
 }
@@ -249,7 +249,6 @@ gboolean optimal_add_element_withsize(struct_cache* cache, cache_line* cp){
 
 
 struct_cache* optimal_init(guint64 size, char data_type, int block_size, void* params){
-#define pq_size_multiplier 10       // ??? WHY
     struct_cache* cache = cache_init(size, data_type, block_size);
     
     optimal_params_t* optimal_params = g_new0(optimal_params_t, 1);
@@ -296,7 +295,7 @@ struct_cache* optimal_init(guint64 size, char data_type, int block_size, void* p
     }
     
     
-    optimal_params->pq = pqueue_init(size*pq_size_multiplier, cmp_pri,
+    optimal_params->pq = pqueue_init(size, cmp_pri,
                                      get_pri, set_pri, get_pos, set_pos);
     
     if (((struct optimal_init_params*)params)->next_access == NULL){

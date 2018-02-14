@@ -187,7 +187,6 @@ sTree * insert(cache_line_type i, sTree * t) {
     }
     new->value = 1 + node_value(new->left) + node_value(new->right);
     return new;
-
 }
 
 sTree * splay_delete(cache_line_type i, sTree * t) {

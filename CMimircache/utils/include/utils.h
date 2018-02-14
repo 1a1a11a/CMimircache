@@ -18,12 +18,13 @@
 #include <unistd.h>
 
 #include <sched.h>
+#include <sys/sysinfo.h>
 
 
 
 int set_thread_affinity(pthread_t tid);
 
-
+guint get_n_cores(void);
 
 
 
