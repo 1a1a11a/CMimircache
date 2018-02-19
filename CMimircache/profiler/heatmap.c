@@ -15,48 +15,31 @@ extern "C"
 #endif
     
     
-    //draw_dict* heatmap_LRU(reader_t* reader,
-    //                       struct_cache* cache,
-    //                       char time_mode,
-    //                       gint64 bin_size,
-    //                       heatmap_type_e plot_type,
-    //                       int interval_hit_ratio_b,
-    //                       double decay_coefficient_lf,
-    //                       int num_of_threads);
-    //
-    //draw_dict* heatmap_nonLRU(reader_t* reader,
-    //                          struct_cache* cache,
-    //                          char time_mode,
-    //                          gint64 bin_size,
-    //                          heatmap_type_e plot_type,
-    //                          int interval_hit_ratio_b,
-    //                          double decay_coefficient_lf,
-    //                          int num_of_threads);
-    
-    
     draw_dict* heatmap_computation(reader_t* reader,
-                                   struct_cache* cache,
+                                   cache_t* cache,
                                    char time_mode,
-                                   gint64 bin_size,
                                    heatmap_type_e plot_type,
-                                   int interval_hit_ratio_b,
-                                   double decay_coefficient_lf,
+                                   hm_comp_params_t* hm_comp_params,
                                    int num_of_threads);
     
     
     draw_dict* hm_hr_st_et(reader_t* reader,
-                           struct_cache* cache,
-                           int interval_hit_ratio_b,
+                           cache_t* cache,
+                           gboolean interval_hit_ratio_b,
                            double decay_coefficient_lf,
                            int num_of_threads);
     
     draw_dict* hm_hr_interval_size(reader_t* reader,
-                                   struct_cache* cache,
+                                   cache_t* cache,
                                    gint64 bin_size,
                                    double decay_coefficient_lf,
                                    int num_of_threads);
     
-    
+    draw_dict* hm_opt_effective_size(reader_t* reader,
+                                     cache_t* cache,
+                                     gint64 bin_size,
+                                     gboolean use_percent_b,
+                                     int num_of_threads);
     
     
     
@@ -94,14 +77,12 @@ extern "C"
      */
     
     draw_dict* heatmap(reader_t* reader,
-                       struct_cache* cache,
+                       cache_t* cache,
                        char time_mode,
                        gint64 time_interval,
-                       gint64 bin_size,
                        gint64 num_of_pixel_for_time_dim,
                        heatmap_type_e plot_type,
-                       int interval_hit_ratio_b,
-                       double decay_coefficient_lf,
+                       hm_comp_params_t* hm_comp_params,
                        int num_of_threads){
         
         if (time_mode == 'v')
@@ -119,22 +100,15 @@ extern "C"
             
             if (plot_type != future_rd_distribution &&
                 plot_type != dist_distribution &&
-                plot_type != rt_distribution) {
+                plot_type != rt_distribution &&
+                plot_type != effective_size) {
                 if (reader->sdata->reuse_dist_type != NORMAL_REUSE_DISTANCE){
                     get_reuse_dist_seq(reader, 0, -1);
                 }
             }
-            
-            //        return heatmap_LRU(reader, cache, time_mode, bin_size, plot_type,
-            //                           interval_hit_ratio_b, decay_coefficient_lf, num_of_threads);
         }
-        //    else{
-        //        return heatmap_nonLRU(reader, cache, time_mode, bin_size, plot_type,
-        //                              interval_hit_ratio_b, decay_coefficient_lf, num_of_threads);
-        //    }
-        
-        return heatmap_computation(reader, cache, time_mode, bin_size, plot_type,
-                                   interval_hit_ratio_b, decay_coefficient_lf, num_of_threads);
+        return heatmap_computation(reader, cache, time_mode,
+                                   plot_type, hm_comp_params, num_of_threads);
         
     }
     
@@ -156,12 +130,16 @@ extern "C"
      *                      then this one is not needed
      *      plot_type:      the type of plot
      *
-     *      interval_hit_ratio_b:   used in hit_ratio_start_time_end_time,
+     *
+     *      inside hm_comp_params:
+     *          interval_hit_ratio_b:   used in hit_ratio_start_time_end_time,
      *                                  if it is True, then the hit ratio of each pixel is not
      *                                  the average hit ratio from beginning,
      *                                  instead it is a combined hit ratio of exponentially decayed
      *                                  average hit ratio plus hit ratio in current interval
-     *      decay_coefficient_lf:      used only when interval_hit_ratio_b is True
+     *          decay_coefficient_lf:      used only when interval_hit_ratio_b is True
+     *          use_percent:            whether the final result is in the form of percent of raw number
+     *                                  currently used in opt_effective_size
      *
      *      num_of_threads: the maximum number of threads can use
      *
@@ -172,20 +150,11 @@ extern "C"
      */
     
     draw_dict* heatmap_computation(reader_t* reader,
-                                   struct_cache* cache,
+                                   cache_t* cache,
                                    char time_mode,
-                                   gint64 bin_size,
                                    heatmap_type_e plot_type,
-                                   int interval_hit_ratio_b,
-                                   double decay_coefficient_lf,
+                                   hm_comp_params_t* hm_comp_params,
                                    int num_of_threads){
-        
-        //    if (plot_type != future_rd_distribution &&
-        //        plot_type != dist_distribution &&
-        //        plot_type != rt_distribution) {
-        //        if (reader->sdata->reuse_dist_type != NORMAL_REUSE_DISTANCE)
-        //            get_reuse_dist_seq(reader, 0, -1);
-        //    }
         
         if (plot_type == hr_st_et){
             GSList* last_access_gslist = get_last_access_dist_seq(reader, read_one_element);
@@ -202,10 +171,9 @@ extern "C"
                 reader->sdata->last_access[counter--] = GPOINTER_TO_INT(sl_node->data);
             }
             g_slist_free(last_access_gslist);
-            return hm_hr_st_et(reader,
-                               cache,
-                               interval_hit_ratio_b,
-                               decay_coefficient_lf,
+            return hm_hr_st_et(reader, cache,
+                               hm_comp_params->interval_hit_ratio_b,
+                               hm_comp_params->ewma_coefficient_lf,
                                num_of_threads);
         }
         
@@ -225,13 +193,10 @@ extern "C"
                 reader->sdata->last_access[counter--] = GPOINTER_TO_INT(sl_node->data);
             }
             g_slist_free(last_access_gslist);
-            return hm_hr_interval_size(reader,
-                                       cache,
-                                       bin_size,
-                                       decay_coefficient_lf,
+            return hm_hr_interval_size(reader, cache,
+                                       hm_comp_params->bin_size_ld,
+                                       hm_comp_params->ewma_coefficient_lf,
                                        num_of_threads);
-            
-            
         }
         
         else if (plot_type == hr_st_size){
@@ -245,6 +210,13 @@ extern "C"
             
             
             
+        }
+        
+        else if (plot_type == effective_size){
+            return hm_opt_effective_size(reader, cache,
+                                         hm_comp_params->bin_size_ld,
+                                         hm_comp_params->use_percent_b,
+                                         num_of_threads);
         }
         
         
@@ -307,54 +279,11 @@ extern "C"
     }
     
     
-    //draw_dict* heatmap_nonLRU(reader_t* reader,
-    //                          struct_cache* cache,
-    //                          char time_mode,
-    //                          gint64 bin_size,
-    //                          heatmap_type_e plot_type,
-    //                          int interval_hit_ratio_b,
-    //                          double decay_coefficient_lf,
-    //                          int num_of_threads){
-    //
-    //    if (plot_type == hr_st_et){
-    //        return hm_hr_st_et(reader, cache, time_mode, bin_size,
-    //                                                     plot_type, interval_hit_ratio_b,
-    //                                                     decay_coefficient_lf,
-    //                                                     num_of_threads);
-    //    }
-    //
-    //    else if (plot_type == hr_interval_size){
-    //
-    //
-    //    }
-    //
-    //    else if (plot_type == hr_st_size){
-    //
-    //
-    //
-    //    }
-    //
-    //    else if (plot_type == avg_rd_st_et){
-    //
-    //
-    //
-    //    }
-    //
-    //    else {
-    //        ERROR("unknown plot type\n");
-    //        exit(1);
-    //    }
-    //
-    //    return NULL;
-    //}
-    
-    
-    
     /** heatmap_hit_ratio_start_time_end_time **/
     
     draw_dict* hm_hr_st_et(reader_t* reader,
-                           struct_cache* cache,
-                           int interval_hit_ratio_b,
+                           cache_t* cache,
+                           gboolean interval_hit_ratio_b,
                            double ewma_coefficient_lf,
                            int num_of_threads){
         
@@ -399,15 +328,16 @@ extern "C"
         
         
         // send data to thread pool and begin computation
-        //    for (i=0; i<break_points->len-1; i++){
         for (i=break_points->len-2; i>=0; i--){
             if ( g_thread_pool_push (gthread_pool, GINT_TO_POINTER(i+1), NULL) == FALSE)    // +1 otherwise, 0 will be a problem
                 ERROR("cannot push data into thread in generalprofiler\n");
         }
-        
+
+        // this is to prevent entering loop when computation is short
+        sleep(2);
         while ( progress < break_points->len-1 ){
-            fprintf(stderr, "%.2f%%\n", ((double)progress)/break_points->len*100);
             sleep(5);
+            fprintf(stderr, "%.2f%%\n", ((double)progress)/break_points->len*100);
 //            fprintf(stderr, "\033[A\033[2K\r");
         }
         
@@ -453,7 +383,6 @@ extern "C"
             dd->matrix[i] = g_new0(double, dd->ylength);
         
         
-        
         // build parameters
         mt_params_hm_t* params = g_new(mt_params_hm_t, 1);
         params->reader = reader;
@@ -483,9 +412,11 @@ extern "C"
                 ERROR("cannot push data into thread in generalprofiler\n");
         }
         
+        // this is to prevent entering loop when computation is short
+        sleep(2);
         while ( progress < break_points->len-1 ){
-            fprintf(stderr, "%.2lf%%", ((double)progress)/break_points->len*100);
             sleep(5);
+            fprintf(stderr, "%.2lf%%\n", ((double)progress)/break_points->len*100);
 //            fprintf(stderr, "\033[A\033[2K\r");
         }
         
@@ -499,17 +430,214 @@ extern "C"
     }
     
     
+    draw_dict* hm_hr_interval_size(reader_t* reader,
+                                   cache_t* cache,
+                                   gint64 bin_size,
+                                   double ewma_coefficient_lf,
+                                   int num_of_threads){
+        
+        gint i;
+        guint64 progress = 0;
+        
+        GArray* break_points;
+        break_points = reader->sdata->break_points->array;
+        
+        gint num_of_bins = (int) ceil(cache->core->size / bin_size) + 1;
+        
+        if (num_of_bins <= 1)
+            // the first bin is size 0
+            num_of_bins = 2;
+        
+        // create draw_dict storage
+        draw_dict* dd = g_new(draw_dict, 1);
+        dd->xlength = break_points->len - 1;
+        dd->ylength = num_of_bins;
+        
+        dd->matrix = g_new(double*, dd->xlength);
+        for (i=0; i<(gint) (dd->xlength); i++)
+            dd->matrix[i] = g_new0(double, dd->ylength);
+        
+        
+        // build parameters
+        mt_params_hm_t* params = g_new(mt_params_hm_t, 1);
+        params->reader = reader;
+        params->break_points = break_points;
+        params->cache = cache;
+        params->bin_size = bin_size;
+        params->dd = dd;
+        
+        params->ewma_coefficient_lf = ewma_coefficient_lf;
+        params->progress = &progress;
+        g_mutex_init(&(params->mtx));
+        
+        
+        // build the thread pool
+        GThreadPool * gthread_pool;
+        if (cache->core->type == e_LRU)
+            gthread_pool = g_thread_pool_new ( (GFunc) hm_LRU_hr_interval_size_thread,
+                                              (gpointer)params, num_of_threads, TRUE, NULL);
+        else
+            gthread_pool = g_thread_pool_new ( (GFunc) hm_nonLRU_hr_interval_size_thread,
+                                              (gpointer)params, num_of_threads, TRUE, NULL);
+        
+        if (gthread_pool == NULL)
+            ERROR("cannot create thread pool in heatmap\n");
+        
+        
+        // send data to thread pool and begin computation
+        for (i=num_of_bins-1; i>=0; i--){
+            if ( g_thread_pool_push (gthread_pool, GINT_TO_POINTER(i+1), NULL) == FALSE)    // +1 otherwise, 0 will be a problem
+                ERROR("cannot push data into thread in generalprofiler\n");
+        }
+        
+        // this is to prevent entering loop when computation is short
+        sleep(2);
+        while ( progress < (guint) num_of_bins ){
+            sleep(5);
+            fprintf(stderr, "%.2f%%\n", ((double)progress)/num_of_bins*100);
+//            fprintf(stderr, "\033[A\033[2K\r");
+        }
+        
+        g_thread_pool_free (gthread_pool, FALSE, TRUE);
+        
+        
+        g_mutex_clear(&(params->mtx));
+        g_free(params);
+        // needs to free draw_dict later
+        return dd;
+    }
+    
+    
+    draw_dict* hm_opt_effective_size(reader_t* reader,
+                                   cache_t* cache,
+                                   gint64 bin_size,
+                                     gboolean use_percent,
+                                     int num_of_threads){
+        
+        gint i;
+        guint64 progress = 0;
+        
+        GArray* break_points;
+        break_points = reader->sdata->break_points->array;
+        
+        gint num_of_bins = (int) ceil(cache->core->size / bin_size) + 1;
+        
+        if (num_of_bins <= 1)
+            num_of_bins = 2;
+        
+        // create draw_dict storage
+        draw_dict* dd = g_new(draw_dict, 1);
+        dd->xlength = break_points->len - 1;
+        dd->ylength = num_of_bins;
+        
+        dd->matrix = g_new(double*, dd->xlength);
+        for (i=0; i<(gint) (dd->xlength); i++)
+            dd->matrix[i] = g_new0(double, dd->ylength);
+        
+        
+        // build parameters
+        mt_params_hm_t* params = g_new(mt_params_hm_t, 1);
+        params->reader = reader;
+        params->break_points = break_points;
+        params->cache = cache; 
+        params->bin_size = bin_size;
+        params->use_percent = use_percent; 
+        params->dd = dd;
+        
+        params->progress = &progress;
+        g_mutex_init(&(params->mtx));
+        
+        
+        // build the thread pool
+        GThreadPool *gthread_pool;
+        
+        if (cache->core->type == e_LRU){
+            gint64 *reuse_dist = g_new(gint64, reader->base->total_num);
+            gint64 *future_reuse_dist = g_new(gint64, reader->base->total_num);
+            
+            if (reader->sdata->reuse_dist_type == 0){
+                reader->sdata->reuse_dist = get_future_reuse_dist(reader, 0, -1);
+                memcpy(future_reuse_dist, reader->sdata->reuse_dist, sizeof(gint64) * reader->base->total_num);
+                g_free(reader->sdata->reuse_dist);
+                reader->sdata->reuse_dist = NULL;
+                reader->sdata->reuse_dist = get_reuse_dist_seq(reader, 0, -1);
+                memcpy(reuse_dist, reader->sdata->reuse_dist, sizeof(gint64) * reader->base->total_num);
+            }
+            else if (reader->sdata->reuse_dist_type == NORMAL_REUSE_DISTANCE){
+                memcpy(reuse_dist, reader->sdata->reuse_dist, sizeof(gint64) * reader->base->total_num);
+                g_free(reader->sdata->reuse_dist);
+                reader->sdata->reuse_dist = NULL;
+                reader->sdata->reuse_dist = get_future_reuse_dist(reader, 0, -1);
+                memcpy(future_reuse_dist, reader->sdata->reuse_dist, sizeof(gint64) * reader->base->total_num);
+            }
+            else if (reader->sdata->reuse_dist_type == FUTURE_REUSE_DISTANCE){
+                memcpy(future_reuse_dist, reader->sdata->reuse_dist, sizeof(gint64) * reader->base->total_num);
+                g_free(reader->sdata->reuse_dist);
+                reader->sdata->reuse_dist = NULL;
+                reader->sdata->reuse_dist = get_reuse_dist_seq(reader, 0, -1);
+                memcpy(reuse_dist, reader->sdata->reuse_dist, sizeof(gint64) * reader->base->total_num);
+            }
+            else{
+                ERROR("unknown reuse distance type %d\n", reader->sdata->reuse_dist_type);
+                abort();
+            }
+
+            params->reuse_dist = reuse_dist;
+            params->future_reuse_dist = future_reuse_dist;
+
+            gthread_pool = g_thread_pool_new ( (GFunc) hm_LRU_effective_size_thread,
+                                              (gpointer)params, num_of_threads, TRUE, NULL);
+        }
+        else
+            gthread_pool = g_thread_pool_new ( (GFunc) hm_effective_size_thread,
+                                                    (gpointer)params, num_of_threads, TRUE, NULL);
+        
+        if (gthread_pool == NULL){
+            ERROR("cannot create thread pool in heatmap\n");
+            abort();
+        }
+        
+        // send data to thread pool and begin computation
+        for (i=num_of_bins-1; i>=0; i--){
+            if ( g_thread_pool_push (gthread_pool, GINT_TO_POINTER(i+1), NULL) == FALSE){    // +1 otherwise, 0 will be a problem
+                ERROR("cannot push data into thread in heatmap computation\n");
+                abort();
+            }
+        }
+        
+        // this is to prevent entering loop when computation is short
+        sleep(2);
+        while ( progress < (guint) num_of_bins ){
+            sleep(5);
+            fprintf(stderr, "%.2f%%\n", ((double)progress)/num_of_bins*100);
+        }
+        
+        g_thread_pool_free (gthread_pool, FALSE, TRUE);
+
+        
+        if (cache->core->type == e_LRU){
+            if (reader->sdata->reuse_dist_type == FUTURE_REUSE_DISTANCE){
+                g_free(reader->sdata->reuse_dist);
+                reader->sdata->reuse_dist = NULL;
+//                reader->sdata->reuse_dist = get_reuse_dist_seq(reader, 0, -1);
+            }
+        }
+        
+        g_mutex_clear(&(params->mtx));
+        g_free(params);
+        // needs to free draw_dict later
+        return dd;
+    }
+
     
     draw_dict* differential_heatmap(reader_t* reader,
-                                    struct_cache* cache1,
-                                    struct_cache* cache2,
+                                    cache_t* cache1,
+                                    cache_t* cache2,
                                     char time_mode,
-                                    gint64 bin_size,
                                     gint64 time_interval,
                                     gint64 num_of_pixel_for_time_dim,
                                     heatmap_type_e plot_type,
-                                    int interval_hit_ratio_b,
-                                    double ewma_coefficient_lf,
+                                    hm_comp_params_t* hm_comp_params,
                                     int num_of_threads){
         
         if (time_mode == 'v')
@@ -520,7 +648,7 @@ extern "C"
             ERROR("unsupported mode: %c\n", time_mode);
             exit(1);
         }
-
+        
         if (cache1==NULL || cache1->core->type == e_LRU \
             || cache2==NULL || cache2->core->type == e_LRU){
             if (plot_type != future_rd_distribution &&
@@ -536,19 +664,15 @@ extern "C"
         draw_dict1 = heatmap_computation(reader,
                                          cache1,
                                          time_mode,
-                                         bin_size,
                                          plot_type,
-                                         interval_hit_ratio_b,
-                                         ewma_coefficient_lf,
+                                         hm_comp_params,
                                          num_of_threads);
         
         draw_dict2 = heatmap_computation(reader,
                                          cache2,
                                          time_mode,
-                                         bin_size,
                                          plot_type,
-                                         interval_hit_ratio_b,
-                                         ewma_coefficient_lf,
+                                         hm_comp_params,
                                          num_of_threads);
         
         // check cache is LRU or not
@@ -605,88 +729,6 @@ extern "C"
         free_draw_dict(draw_dict1);
         return draw_dict2;
     }
-    
-    
-    draw_dict* hm_hr_interval_size(reader_t* reader,
-                                   struct_cache* cache,
-                                   gint64 bin_size,
-                                   double ewma_coefficient_lf,
-                                   int num_of_threads){
-        
-        gint i;
-        guint64 progress = 0;
-        
-        GArray* break_points;
-        break_points = reader->sdata->break_points->array;
-        
-        gint num_of_bins = (int) ceil(cache->core->size / bin_size) + 1;
-        
-        if (num_of_bins <= 1)
-            // the first bin is size 0
-            num_of_bins = 2;
-        
-        // create draw_dict storage
-        draw_dict* dd = g_new(draw_dict, 1);
-        dd->xlength = break_points->len - 1;
-        dd->ylength = num_of_bins;
-        
-        //    // number of bins
-        //    dd->ylength = num_of_bins;
-        
-        dd->matrix = g_new(double*, dd->xlength);
-        for (i=0; i<(gint) (dd->xlength); i++)
-            dd->matrix[i] = g_new0(double, dd->ylength);
-        
-        
-        // build parameters
-        mt_params_hm_t* params = g_new(mt_params_hm_t, 1);
-        params->reader = reader;
-        params->break_points = break_points;
-        params->cache = cache;
-        params->bin_size = bin_size;
-        params->dd = dd;
-        
-        params->ewma_coefficient_lf = ewma_coefficient_lf;
-        params->progress = &progress;
-        g_mutex_init(&(params->mtx));
-        
-        
-        // build the thread pool
-        GThreadPool * gthread_pool;
-        if (cache->core->type == e_LRU)
-            gthread_pool = g_thread_pool_new ( (GFunc) hm_LRU_hr_interval_size_thread,
-                                              (gpointer)params, num_of_threads, TRUE, NULL);
-        else
-            gthread_pool = g_thread_pool_new ( (GFunc) hm_nonLRU_hr_interval_size_thread,
-                                              (gpointer)params, num_of_threads, TRUE, NULL);
-        
-        if (gthread_pool == NULL)
-            ERROR("cannot create thread pool in heatmap\n");
-        
-        
-        // send data to thread pool and begin computation
-        for (i=num_of_bins-1; i>=0; i--){
-            if ( g_thread_pool_push (gthread_pool, GINT_TO_POINTER(i+1), NULL) == FALSE)    // +1 otherwise, 0 will be a problem
-                ERROR("cannot push data into thread in generalprofiler\n");
-        }
-        
-        while ( progress < (guint) num_of_bins ){
-            fprintf(stderr, "%.2f%%\n", ((double)progress)/num_of_bins*100);
-            sleep(5);
-//            fprintf(stderr, "\033[A\033[2K\r");
-        }
-        
-        g_thread_pool_free (gthread_pool, FALSE, TRUE);
-        
-        
-        g_mutex_clear(&(params->mtx));
-        g_free(params);
-        // needs to free draw_dict later
-        return dd;
-    }
-    
-    
-    
     
     
     

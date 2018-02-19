@@ -18,8 +18,8 @@
 #define MAGENTA "\x1B[35m"
 #define CYAN    "\x1B[36m"
 
-#define VERBOSE_LEVEL 1
-#define DEBUG_LEVEL   2
+#define DEBUG_LEVEL   1
+#define VERBOSE_LEVEL 2
 #define INFO_LEVEL    3
 #define WARNING_LEVEL 4
 #define SEVERE_LEVEL  5

@@ -600,10 +600,12 @@ gint64* get_future_reuse_dist(reader_t* reader, gint64 begin, gint64 end){
     if (begin != 0 && begin != -1){
         WARNING("range reuse distance computation is no longer supported, "
                 "the returned result is full reust distance\n");
+        abort();
     }
     if (end !=0 && end != -1 && end != reader->base->total_num){
         WARNING("range reuse distance computation is no longer supported, "
                 "the returned result is full reust distance\n");
+        abort();
     }
     
     if (begin < 0)

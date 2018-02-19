@@ -223,7 +223,7 @@ extern "C"
         //    array_size ++ ;
 
         GArray* break_points = g_array_new(FALSE, FALSE, sizeof(guint64));
-        guint64 value = 0;
+        gint64 value = 0;
         i = 0;
         while (value <= reader->base->total_num){
             g_array_append_val(break_points, value);
