@@ -373,8 +373,6 @@ return_res_t** profiler_partition(reader_t* reader_in, struct_cache* cache_in, i
     params->cache = cache_in;
     params->result = result;
     params->bin_size = (guint) bin_size;
-    params->begin_pos = 0;
-    params->end_pos = -1;
     params->progress = &progress;
     g_mutex_init(&(params->mtx));
 

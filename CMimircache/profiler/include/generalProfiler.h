@@ -34,19 +34,26 @@ typedef struct{
     float miss_rate;
     float hit_rate;
     long long cache_size;
+    gpointer other_data; 
 }return_res_t;
 
+    
+    typedef enum {
+        e_hit=0,
+        e_eviction_age,
+    }profiler_type_e;
 
 struct multithreading_params_generalProfiler{
     reader_t* reader;
-    guint64 begin_pos;
-    guint64 end_pos;
+//    guint64 begin_pos;
+//    guint64 end_pos;
     struct cache* cache;
     return_res_t** result;
     guint bin_size;
     GHashTable *prefetch_hashtable;
     GMutex mtx;             // prevent simultaneous write to progress
     guint64* progress;
+    gpointer other_data; 
 };
 typedef struct multithreading_params_generalProfiler mt_param_gp_t;
 
@@ -56,8 +63,7 @@ return_res_t** profiler(
                         struct cache* cache_in,
                         int num_of_threads_in,
                         int bin_size_in,
-                        gint64 begin_pos,
-                        gint64 end_pos
+                        profiler_type_e prof_type
                         );
 
 gdouble* LRU_evict_err_statistics(
