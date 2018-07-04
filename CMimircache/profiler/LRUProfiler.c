@@ -14,9 +14,6 @@ extern "C"
 #endif
 
 
-
-
-
 static inline sTree*
 process_one_element(cache_line* cp,
                     sTree* splay_tree,
