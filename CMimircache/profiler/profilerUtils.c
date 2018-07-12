@@ -222,12 +222,16 @@ extern "C"
             time_interval = (gint) ceil((double) reader->base->total_num/num_of_piexls + 1);
         //    array_size ++ ;
 
-        GArray* break_points = g_array_sized_new(FALSE, FALSE, sizeof(guint64), array_size);
-        for (i=0; i<array_size-1; i++){
-            guint64 value = i * time_interval;
+        GArray* break_points = g_array_new(FALSE, FALSE, sizeof(guint64));
+        gint64 value = 0;
+        i = 0;
+        while (value <= reader->base->total_num){
             g_array_append_val(break_points, value);
+            i += 1;
+            value = i * time_interval;
         }
-        g_array_append_val(break_points, reader->base->total_num);
+        if (value != reader->base->total_num)
+            g_array_append_val(break_points, reader->base->total_num);
 
 
         if (break_points->len > 10000){

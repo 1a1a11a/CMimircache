@@ -146,15 +146,12 @@ void read_one_element(reader_t *const reader, cache_line_t *const c){
             strncpy(c->item, reader->base->mapped_file+reader->base->offset, line_len);
             c->item[line_len] = 0;
             reader->base->offset = (void*)line_end - reader->base->mapped_file;
-//            printf("%lu/%ld\n", reader->base->offset, reader->base->file_size);
             break;
         case VSCSI:
             vscsi_read(reader, c);
-//            *(guint64*) (c->item_p) += 1;
             break;
         case BINARY:
             binary_read(reader, c);
-//            *(guint64*) (c->item_p) += 1; 
             break;
         default:
             ERROR("cannot recognize reader type, given reader type: %c\n",
@@ -165,13 +162,11 @@ void read_one_element(reader_t *const reader, cache_line_t *const c){
     if (reader->base->data_type == 'l' &&
         (reader->base->type == 'c' || reader->base->type == 'p')){
         *(guint64*)(c->item_p) = atoll(c->item);
-//        guint64 n = atoll(c->item);
-//        *(guint64*) (c->item_p) = n + 1; // this is to avoid the situation when block number is 0
     }
 }
 
 int go_back_one_line(reader_t *const reader){
-    /* go back one cache line
+    /* go back one request in the data
      return 0 on successful, non-zero otherwise
      */
     switch (reader->base->type) {
@@ -183,21 +178,26 @@ int go_back_one_line(reader_t *const reader){
             // use last record size to save loop
             const char * cp = reader->base->mapped_file + reader->base->offset;
             if (reader->base->record_size){
-                cp -= reader->base->record_size - 1;
+                // fix from LZ
+                cp -= reader->base->record_size + 1;
+//                cp -= reader->base->record_size - 1;
             }
             else{
-                // no record size, can only happen when it is the last line
+                /*  no record size, can only happen when it is the last line
+                 *  or when it is called in go_back_two_lines 
+                 */
                 cp --;
-                // find the first current line ending
+                // find current line ending
                 while (*cp == FILE_LF || *cp == FILE_CR){
                     cp--;
                     if ((void*)cp < reader->base->mapped_file)
                         return 1;
                 }
             }
-            // now points to either end of current line letters/non-LFCR
-            // or points to somewhere after the beginning of current line beginning
-            // find the first character of current line
+            /** now cp should point to either the last letter/non-LFCR of current line
+             *  or points to somewhere after the beginning of current line beginning
+             *  find the first character of current line 
+             */
             while ( (void*)cp > reader->base->mapped_file &&
                    *cp != FILE_LF && *cp != FILE_CR){
                 cp--;
@@ -209,7 +209,7 @@ int go_back_one_line(reader_t *const reader){
                 ERROR("current pointer points before mapped file\n");
                 exit(1);
             }
-            // now cp points to the LFCR before the line that should be read
+            // now cp points to the pos after LFCR before the line that should be read
             reader->base->offset = (void*)cp - reader->base->mapped_file; 
             
             return 0;
@@ -238,7 +238,7 @@ int go_back_two_lines(reader_t *const reader){
     switch (reader->base->type) {
         case CSV:
         case PLAIN:
-            if (go_back_one_line(reader)==0){
+            if (go_back_one_line(reader) == 0){
                 reader->base->record_size = 0; 
                 return go_back_one_line(reader);
             }

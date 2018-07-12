@@ -158,10 +158,6 @@ int binaryReader_setup(const char *const filename,
     reader->base->total_num = reader->base->file_size/(reader->base->record_size);
     params->num_of_fields = count_sum;
     
-    DEBUG_MSG("record size %zu, label pos %d, label len %d, label type %c, "
-          "real time pos %d, real time len %d, real time type %c\n",
-          reader->base->record_size, params->label_pos, params->label_len, params->label_type,
-          params->real_time_pos, params->real_time_len, params->real_time_type); 
     
 	return 0;
 }

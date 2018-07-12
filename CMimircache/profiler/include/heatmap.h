@@ -31,7 +31,17 @@ extern "C"
 {
 #endif
 
+    
+    typedef struct {
+        gint64 bin_size_ld;
+        
+        gboolean interval_hit_ratio_b;
+        double ewma_coefficient_lf;
+        
+        gboolean use_percent_b;
 
+    }hm_comp_params_t;
+    
     typedef struct {
         /*
          the data in matrix is stored in column based for performance consideration
@@ -53,9 +63,14 @@ extern "C"
         guint64 cache_size;
         gint64 bin_size;
 
-        int interval_hit_ratio_b;
+        gboolean interval_hit_ratio_b;
         double ewma_coefficient_lf;
 
+        gboolean use_percent; 
+        
+        gint64 *reuse_dist;
+        gint64 *future_reuse_dist;
+        
         GArray* break_points;
         draw_dict* dd;
         guint64* progress;
@@ -70,7 +85,7 @@ extern "C"
         hr_st_et,
         hr_st_size,
         avg_rd_st_et,
-        cmc_st_et,
+        effective_size,
         rd_distribution,
         future_rd_distribution,
         dist_distribution,          // this one is not using reuse distance, instead using distance to last access
@@ -82,9 +97,6 @@ extern "C"
 
 
 
-    // double get_log_base(guint64 max, guint64 expect_result);
-
-
     void free_draw_dict(draw_dict* dd);
 
 
@@ -93,23 +105,19 @@ extern "C"
                        struct_cache* cache,
                        char time_mode,
                        gint64 time_interval,
-                       gint64 bin_size,
                        gint64 num_of_pixel_for_time_dim,
                        heatmap_type_e plot_type,
-                       int interval_hit_ratio_b,
-                       double decay_coefficient_lf,
+                       hm_comp_params_t* hm_comp_params,
                        int num_of_threads);
 
     draw_dict* differential_heatmap(reader_t* reader,
                                     struct_cache* cache1,
                                     struct_cache* cache2,
                                     char time_mode,
-                                    gint64 bin_size,
                                     gint64 time_interval,
                                     gint64 num_of_pixels,
                                     heatmap_type_e plot_type,
-                                    int interval_hit_ratio_b,
-                                    double decay_coefficient_lf,
+                                    hm_comp_params_t* hm_comp_params,
                                     int num_of_threads);
 
     draw_dict* heatmap_rd_distribution(reader_t* reader,
@@ -139,7 +147,12 @@ extern "C"
     void hm_rd_distribution_CDF_thread(gpointer data,
                                        gpointer user_data);
 
+    void hm_effective_size_thread(gpointer data,
+                                          gpointer user_data);
 
+    void hm_LRU_effective_size_thread(gpointer data, gpointer user_data); 
+
+        
 #ifdef __cplusplus
 }
 #endif
