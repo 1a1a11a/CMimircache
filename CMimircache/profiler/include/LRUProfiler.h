@@ -49,10 +49,13 @@ gint64* get_dist_to_last_access(reader_t* reader);
 
 gint64* get_reuse_time(reader_t* reader);
 
+guint64* get_hit_count_seq_shards(reader_t* reader,
+                                gint64 size,
+                                double sample_ratio);
+
 double* get_hit_rate_seq_shards(reader_t* reader,
                                 gint64 size,
-                                double sample_ratio,
-                                gint64 correction);
+                                double sample_ratio);
 
 guint64* get_hitcount_withsize_seq(reader_t* reader,
                                    gint64 size,

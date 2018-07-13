@@ -24,6 +24,13 @@ process_one_element(cache_line* cp,
                     guint64 ts,
                     gint64* reuse_dist);
 
+static inline sTree*
+process_one_element_shards(cache_line* cp,
+                    sTree* splay_tree,
+                    GHashTable* hash_table,
+                    guint64 ts,
+                    gint64* reuse_dist, double sample_ratio);
+
 
 
 
@@ -284,8 +291,7 @@ double* get_hitrate_withsize_seq(reader_t* reader,
 
 guint64* get_hit_count_seq_shards(reader_t* reader,
                                   gint64 size,
-                                  double sample_ratio,
-                                  gint64 correction){
+                                  double sample_ratio){
     /* same as get_hit_count_seq, but using shards generated data,
      * get the hit count, if size==-1, then do all the counting, otherwise,
      * treat the ones with reuse distance larger than size as out of range,
@@ -297,21 +303,22 @@ guint64* get_hit_count_seq_shards(reader_t* reader,
     
     guint64 ts=0;
     gint64 reuse_dist;
-    guint64 * hit_count_array;
+    gint64 * hit_count_array = NULL;
     
     if (reader->base->total_num == -1)
         get_num_of_req(reader);
     
     if (size == -1)
-        size = (gint64) (reader->base->total_num / sample_ratio);
+        size = reader->base->total_num;
     
+    assert(size == reader->base->total_num);
     
     /* for a cache_size=size, we need size+1 bucket for size 0~size(included),
      * the last element(size+1) is used for storing count of reuse distance > size
      * if size==reader->base->total_num, then the last two are not used
      */
-    hit_count_array = g_new0(guint64, size+3);
-    
+    hit_count_array = g_new0(gint64, size+3);
+    assert(hit_count_array != NULL);
     
     // create cache line struct and initializa
     cache_line* cp = new_cacheline();
@@ -339,28 +346,46 @@ guint64* get_hit_count_seq_shards(reader_t* reader,
     
     // create splay tree
     sTree* splay_tree = NULL;
-    
+    gint64 num_reference_count = 0;
+    gint64 num_unique_references = 0;
     read_one_element(reader, cp);
     while (cp->valid){
-        splay_tree = process_one_element(cp, splay_tree, hash_table, ts, &reuse_dist);
-        if (reuse_dist == -1)
-            hit_count_array[size+2] += 1;
-        else
-            reuse_dist = (gint64)(reuse_dist / sample_ratio);
-        
-        if (reuse_dist>=size)
-            hit_count_array[size+1] += 1;
-        else
-            hit_count_array[reuse_dist+1] += 1;
+        gint64 mod_val = 0xffffffff;
+        gint64 mod_limit = mod_val * sample_ratio;
+
+        uint32_t hash[1];                /* Output for the hash */
+        uint32_t seed = 43;              /* Seed value for hash */
+
+        MurmurHash3_x86_32(cp->item_p, strlen(cp->item_p), seed, hash);
+
+        uint32_t hash_val = hash[0];
+        gint64 mod_res = hash_val % mod_val;
+
+        if (mod_res < mod_limit) {
+          num_reference_count++;
+          splay_tree = process_one_element_shards(cp, splay_tree, hash_table, ts, &reuse_dist, sample_ratio);
+          assert(reuse_dist >= -1);
+          if (reuse_dist == -1) {
+              num_unique_references++;
+              hit_count_array[size+2] += 1;
+          }
+          else {
+              reuse_dist = (gint64)(reuse_dist/sample_ratio);
+              if (reuse_dist>=(size))
+                  hit_count_array[size+1] += 1;
+              else
+                  hit_count_array[reuse_dist] += 1;
+            }
+          ts++;
+        }
         read_one_element(reader, cp);
-        ts++;
     }
-    if (correction != 0){
-        if (correction<0 && -correction > (long) hit_count_array[0])
-            hit_count_array[0] = 0;
-        else
-            hit_count_array[0] += correction;
-    }
+
+
+    int expected_number_references = (int)floor(reader->base->total_num * sample_ratio);
+    int diff_references = expected_number_references - num_reference_count;
+
+    hit_count_array[0] += diff_references;
     
     
     // clean up
@@ -376,26 +401,27 @@ guint64* get_hit_count_seq_shards(reader_t* reader,
 
 double* get_hit_rate_seq_shards(reader_t* reader,
                                 gint64 size,
-                                double sample_ratio,
-                                gint64 correction){
-    int i=0;
+                                double sample_ratio){
+
     if (reader->base->total_num == -1)
         reader->base->total_num = get_num_of_req(reader);
     
     if (size == -1)
-        size = (gint64) (reader->base->total_num / sample_ratio);
+        size = reader->base->total_num;
+
+    assert(size == reader->base->total_num);
     
-    if (reader->udata->hit_rate && size==reader->base->total_num)
-        return reader->udata->hit_rate;
-    
-    
-    guint64* hit_count_array = get_hit_count_seq_shards(reader, size, sample_ratio, correction);
-    double total_num = (double)(reader->base->total_num);
+    if (reader->udata->hit_rate_shards && size==reader->base->total_num)
+        return reader->udata->hit_rate_shards;
     
     
-    
-    double* hit_rate_array = g_new(double, size+3);
+    gint64* hit_count_array = get_hit_count_seq_shards(reader, size, sample_ratio);
+    assert(hit_count_array != NULL);
+    double total_num = (double)(reader->base->total_num * sample_ratio);
+    double* hit_rate_array = g_new0(double, size+3);
+
     hit_rate_array[0] = hit_count_array[0]/total_num;
+    int i = 0;
     for (i=1; i<size+1; i++){
         hit_rate_array[i] = hit_count_array[i]/total_num + hit_rate_array[i-1];
     }
@@ -403,10 +429,13 @@ double* get_hit_rate_seq_shards(reader_t* reader,
     hit_rate_array[size+1] = hit_count_array[size+1]/total_num;
     // cold miss
     hit_rate_array[size+2] = hit_count_array[size+2]/total_num;
-    
+
+    assert(hit_count_array != NULL);
+
     g_free(hit_count_array);
+
     if (size==reader->base->total_num)
-        reader->udata->hit_rate = hit_rate_array;
+        reader->udata->hit_rate_shards = hit_rate_array;
     
     return hit_rate_array;
 }
@@ -1079,6 +1108,78 @@ static inline sTree* process_one_element(cache_line* cp,
     return newtree;
 }
 
+
+/*-----------------------------------------------------------------------------
+ *
+ * process_one_element_shards--
+ *      this function is used for computing reuse distance for each request that
+ *      satisfies the shards conditions
+ *      it maintains a hashmap and a splay tree,
+ *      time complexity is O(log(N)), N is the number of unique elements
+ *
+ *
+ * Input:
+ *      cp           the cache line struct contains input data (request label)
+ *      splay_tree   the splay tree struct
+ *      hash_table   hashtable for remember last request timestamp (virtual)
+ *      ts           current timestamp
+ *      reuse_dist   the calculated reuse distance
+ *      sample_ratio the sample ratio for sharding
+ *
+ * Return:
+ *      splay tree struct pointer, because splay tree is modified every time,
+ *      so it is essential to update the splay tree
+ *
+ *-----------------------------------------------------------------------------
+ */
+static inline sTree* process_one_element_shards(cache_line* cp,
+                                         sTree* splay_tree,
+                                         GHashTable* hash_table,
+                                         guint64 ts,
+                                         gint64* reuse_dist, double sample_ratio){
+    gpointer gp;
+
+    gp = g_hash_table_lookup(hash_table, cp->item_p);
+
+    sTree* newtree;
+    if (gp == NULL){
+        // first time access
+        newtree = insert(ts, splay_tree);
+        gint64 *value = g_new(gint64, 1);
+        if (value == NULL){
+            ERROR("not enough memory\n");
+            exit(1);
+        }
+        *value = ts;
+        if (cp->type == 'c')
+            g_hash_table_insert(hash_table, g_strdup((gchar*)(cp->item_p)), (gpointer)value);
+
+        else if (cp->type == 'l'){
+            gint64* key = g_new(gint64, 1);
+            *key = *(guint64*)(cp->item_p);
+            g_hash_table_insert(hash_table, (gpointer)(key), (gpointer)value);
+        }
+        else{
+            ERROR("unknown cache line content type: %c\n", cp->type);
+            exit(1);
+        }
+        *reuse_dist = -1;
+    }
+    else{
+        // not first time access
+        guint64 old_ts = *(guint64*)gp;
+        newtree = splay(old_ts, splay_tree);
+        // rescaling the histrograms should I be diving the ts by sample ratio?
+        // because right now I am not storing the scaled values but scaline them
+        // once I retrieve it.
+        *reuse_dist = node_value(newtree->right);
+        *(guint64*)gp = ts;
+        newtree = splay_delete(old_ts, newtree);
+        newtree = insert(ts, newtree);
+
+    }
+    return newtree;
+}
 
 #ifdef __cplusplus
 }
