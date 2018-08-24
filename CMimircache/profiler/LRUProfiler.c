@@ -441,7 +441,7 @@ double* get_hit_rate_seq_shards(reader_t* reader,
 }
 
 gint64* get_hit_count_phase(reader_t* reader, gint64 current_phase, gint64 num_phases){
-    printf("In this shiiiii as well");
+
     int i=0;
     guint64 ts=0;
     gint64 reuse_dist;
@@ -455,7 +455,6 @@ gint64* get_hit_count_phase(reader_t* reader, gint64 current_phase, gint64 num_p
     gint64 end_request = (gint64)(current_phase + 1)*request_per_phase - 1;
     gint64 size = (gint64) request_per_phase;
     guint64* hit_count_array = g_new0(guint64, (gint64)request_per_phase+3);
-    printf("\n start at %d and end at %d\n", start_request, end_request);
 
     // create cache line struct and initializa
     cache_line* cp = new_cacheline();
@@ -512,7 +511,6 @@ gint64* get_hit_count_phase(reader_t* reader, gint64 current_phase, gint64 num_p
 }
 
 double* get_hit_rate_phase(reader_t* reader, gint64 current_phase, gint64 num_phases){
-    printf("In this shiiiii");
     
     if (reader->base->total_num == -1)
         reader->base->total_num = get_num_of_req(reader);
