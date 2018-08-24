@@ -57,6 +57,10 @@ double* get_hit_rate_seq_shards(reader_t* reader,
                                 gint64 size,
                                 double sample_ratio);
 
+double* get_hit_rate_phase(reader_t* reader,
+                                gint64 current_phase,
+                                gint64 num_phases);
+
 guint64* get_hitcount_withsize_seq(reader_t* reader,
                                    gint64 size,
                                    int block_size);

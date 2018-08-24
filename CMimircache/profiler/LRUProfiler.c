@@ -440,6 +440,105 @@ double* get_hit_rate_seq_shards(reader_t* reader,
     return hit_rate_array;
 }
 
+gint64* get_hit_count_phase(reader_t* reader, gint64 current_phase, gint64 num_phases){
+    printf("In this shiiiii as well");
+    int i=0;
+    guint64 ts=0;
+    gint64 reuse_dist;
+
+    if (reader->base->total_num == -1)
+        reader->base->total_num = get_num_of_req(reader);
+
+    gint64 total_request = reader->base->total_num;
+    double request_per_phase = floor(total_request/num_phases);
+    gint64 start_request = (gint64) request_per_phase * current_phase;
+    gint64 end_request = (gint64)(current_phase + 1)*request_per_phase - 1;
+    gint64 size = (gint64) request_per_phase;
+    guint64* hit_count_array = g_new0(guint64, (gint64)request_per_phase+3);
+    printf("\n start at %d and end at %d\n", start_request, end_request);
+
+    // create cache line struct and initializa
+    cache_line* cp = new_cacheline();
+    cp->type = reader->base->data_type;
+    
+    // create hashtable
+    GHashTable * hash_table;
+    if (reader->base->data_type == 'l'){
+        hash_table = g_hash_table_new_full(g_int64_hash, g_int64_equal, \
+                                           (GDestroyNotify)simple_g_key_value_destroyer, \
+                                           (GDestroyNotify)simple_g_key_value_destroyer);
+    }
+    else if (reader->base->data_type == 'c' ){
+        hash_table = g_hash_table_new_full(g_str_hash, g_str_equal, \
+                                           (GDestroyNotify)simple_g_key_value_destroyer, \
+                                           (GDestroyNotify)simple_g_key_value_destroyer);
+    }
+    else{
+        ERROR("does not recognize reader data type %c\n", reader->base->data_type);
+        abort();
+    }
+    
+    // TODO: when it is not profiling with size, just use reuse distance for calculation,
+    // because reuse distance might be loaded without re-computation 
+    
+    // create splay tree
+    sTree* splay_tree = NULL;
+    read_one_element(reader, cp);
+    gint64 request_count = 1;
+    while (cp->valid){
+        if (request_count >= start_request && request_count <= end_request) {
+            splay_tree = process_one_element(cp, splay_tree, hash_table, ts, &reuse_dist);
+            if (reuse_dist == -1)
+                hit_count_array[size+2] += 1;
+            else if (reuse_dist>=size)
+                hit_count_array[size+1] += 1;
+            else
+                /* why + 1 here ? */ 
+                hit_count_array[reuse_dist+1] += 1;
+        }
+        else if (request_count > end_request)
+            break;
+        read_one_element(reader, cp);
+        request_count++;
+        ts++;
+    }
+
+    // clean up
+    destroy_cacheline(cp);
+    g_hash_table_destroy(hash_table);
+    free_sTree(splay_tree);
+    reset_reader(reader);
+    return hit_count_array;
+}
+
+double* get_hit_rate_phase(reader_t* reader, gint64 current_phase, gint64 num_phases){
+    printf("In this shiiiii");
+    
+    if (reader->base->total_num == -1)
+        reader->base->total_num = get_num_of_req(reader);
+
+    gint64 total_request = reader->base->total_num;
+    double request_per_phase = floor(total_request/num_phases);
+    gint64 size = (gint64) request_per_phase;
+
+    guint64* hit_count_array = get_hit_count_phase(reader, current_phase, num_phases);
+    double* hit_rate_array = g_new(double, size+3);
+    hit_rate_array[0] = hit_count_array[0]/(gint64)request_per_phase;
+
+    int i=0;
+    for (i=1; i<size+1; i++){
+        hit_rate_array[i] = hit_count_array[i]/request_per_phase + hit_rate_array[i-1];
+    }
+
+    // larger than given cache size
+    hit_rate_array[size+1] = hit_count_array[size+1]/request_per_phase;
+    // cold miss
+    hit_rate_array[size+2] = hit_count_array[size+2]/request_per_phase;
+
+    g_free(hit_count_array);
+
+    return hit_rate_array;
+}
 
 double* get_hit_rate_seq(reader_t* reader, gint64 size, gint64 begin, gint64 end){
     int i=0;
@@ -458,12 +557,9 @@ double* get_hit_rate_seq(reader_t* reader, gint64 size, gint64 begin, gint64 end
     if (reader->udata->hit_rate && size==reader->base->total_num && end-begin==reader->base->total_num)
         return reader->udata->hit_rate;
 
-    
     guint64* hit_count_array = get_hit_count_seq(reader, size, begin, end);
     double total_num = (double)(end - begin);
 
-    
-    
     double* hit_rate_array = g_new(double, size+3);
     hit_rate_array[0] = hit_count_array[0]/total_num;
     for (i=1; i<size+1; i++){
