@@ -54,6 +54,7 @@ reader_t* setup_reader(const char* const file_loc,
     reader->sdata->max_reuse_dist = 0;
     
     reader->udata->hit_rate = NULL;
+    reader->udata->hit_rate_shards = NULL;
     
     reader->base->total_num = -1;
     reader->base->block_unit_size = block_unit_size;
@@ -493,6 +494,8 @@ int close_reader(reader_t *const reader){
     if (reader->udata){
         if (reader->udata->hit_rate)
             g_free(reader->udata->hit_rate);
+        if (reader->udata->hit_rate_shards)
+            g_free(reader->udata->hit_rate_shards);
     }
 
     g_free(reader->base);
@@ -539,6 +542,8 @@ int close_reader_unique(reader_t *const reader){
     if (reader->udata){
         if (reader->udata->hit_rate)
             g_free(reader->udata->hit_rate);
+        if (reader->udata->hit_rate_shards)
+            g_free(reader->udata->hit_rate_shards);
     }
     
     g_free(reader->base);

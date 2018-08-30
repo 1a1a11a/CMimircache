@@ -136,6 +136,7 @@ typedef struct reader_base{
 typedef struct reader_data_unique{
 
     double* hit_rate;
+    double* hit_rate_shards;
     double log_base;
 
 }reader_data_unique_t;

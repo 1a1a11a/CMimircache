@@ -9,6 +9,7 @@
 #include "utils.h"
 #include "const.h"
 #include "logging.h"
+#include "murmur3.h"
 
 
 
