@@ -31,16 +31,18 @@ typedef struct{
     long long total_count;
     long long hit_count;        // this can be negative!!
     long long miss_count;
-    float miss_rate;
-    float hit_rate;
+    float miss_ratio;
+    float hit_ratio;
     long long cache_size;
-    gpointer other_data; 
+    gpointer other_data;
 }return_res_t;
 
-    
+
     typedef enum {
         e_hit=0,
         e_eviction_age,
+        e_hit_result,
+        e_evictions,
     }profiler_type_e;
 
 struct multithreading_params_generalProfiler{
@@ -53,7 +55,7 @@ struct multithreading_params_generalProfiler{
     GHashTable *prefetch_hashtable;
     GMutex mtx;             // prevent simultaneous write to progress
     guint64* progress;
-    gpointer other_data; 
+    gpointer other_data;
 };
 typedef struct multithreading_params_generalProfiler mt_param_gp_t;
 

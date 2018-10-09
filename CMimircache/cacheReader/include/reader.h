@@ -76,13 +76,13 @@ struct cache_line{
     int op;
     gint64 real_time;
     gboolean valid;
-    
+
     unsigned long cache_server_id;                             /* id of cache server, used in akamaiSimulator */
     unsigned char traceID;                           /* this is for mixed trace */
     void *content;                                   /* the content of page/request */
     guint size_of_content;                           /* the size of mem area content points to */
-    
-    
+
+
 };
 
 typedef struct cache_line cache_line;
@@ -94,49 +94,49 @@ typedef cache_line_t request_t;
 struct reader;
 
 typedef struct reader_base{
-    
+
     char type;                              /* possible types: c(csv), v(vscsi),
                                              * p(plain text), b(binaryReader)  */
     char data_type;                         /* possible types: l(guint64), c(char*) */
-    int block_unit_size;                         /* used when consider variable request size 
-                                             * it is size of basic unit of a big request, 
+    int block_unit_size;                         /* used when consider variable request size
+                                             * it is size of basic unit of a big request,
                                              * in CPHY data, it is 512 bytes */
                                             /* currently not used */
-    int disk_sector_size;   
+    int disk_sector_size;
     FILE* file;
     char file_loc[FILE_LOC_STR_SIZE];
-//    char rd_file_loc[FILE_LOC_STR_SIZE];    /* the file that stores reuse distance of the data, 
-//                                             * format: gint64 per entry */ 
+//    char rd_file_loc[FILE_LOC_STR_SIZE];    /* the file that stores reuse distance of the data,
+//                                             * format: gint64 per entry */
 //    char frd_file_loc[FILE_LOC_STR_SIZE];
     size_t file_size;
     void* init_params;
-    
+
     void* mapped_file;                      /* mmap the file, this should not change during runtime
                                              * offset in the file is changed using offset */
     guint64 offset;
     size_t record_size;                     /* the size of one record, used to
                                              * locate the memory location of next element,
-                                             * when used in vscsiReaser and binaryReader, 
-                                             * it is a const value, 
-                                             * when it is used in plainReader or csvReader, 
-                                             * it is the size of last record, it does not 
+                                             * when used in vscsiReaser and binaryReader,
+                                             * it is a const value,
+                                             * when it is used in plainReader or csvReader,
+                                             * it is the size of last record, it does not
                                              * include LFCR or 0 */
-    
+
     gint64 total_num;                       /* number of records */
-    
-    
+
+
     gint ver;
-    
+
     void* params;                           /* currently not used */
-    
+
 
 } reader_base_t;
 
 
 typedef struct reader_data_unique{
 
-    double* hit_rate;
-    double* hit_rate_shards;
+    double* hit_ratio;
+    double* hit_ratio_shards;
     double log_base;
 
 }reader_data_unique_t;
@@ -145,17 +145,17 @@ typedef struct reader_data_unique{
 typedef struct reader_data_share{
     break_point_t *break_points;
     gint64* reuse_dist;
-    char reuse_dist_type;                  // NORMAL_REUSE_DISTANCE or FUTURE_REUSE_DISTANCE 
+    char reuse_dist_type;                  // NORMAL_REUSE_DISTANCE or FUTURE_REUSE_DISTANCE
     gint64 max_reuse_dist;
     gint* last_access;
-    
+
 }reader_data_share_t;
 
 
 typedef struct reader{
     struct reader_base* base;
     struct reader_data_unique* udata;
-    struct reader_data_share* sdata; 
+    struct reader_data_share* sdata;
     void* reader_params;
 }reader_t;
 
@@ -226,23 +226,23 @@ static inline gboolean find_line_ending(reader_t *const reader,
                                         long* const line_len){
     /**
      *  find the closest line ending, save at line_end
-     *  line_end should point to the character that is not current line, 
+     *  line_end should point to the character that is not current line,
      *  in other words, the character after all LFCR
      *  line_len is the length of current line, does not include CRLF, nor \0
      *  return TRUE, if end of file
      *  return FALSE else
      */
-    
+
     size_t size = MAX_LINE_LEN;
     *line_end = NULL;
-    
+
     while (*line_end == NULL){
         if (size > (long)reader->base->file_size - reader->base->offset)
             size = reader->base->file_size - reader->base->offset;
         *line_end = (char*) memchr( (void*) ((char*)(reader->base->mapped_file) + reader->base->offset), CSV_LF, size);
         if (*line_end == NULL)
             *line_end = (char*) memchr((char*)(reader->base->mapped_file) + reader->base->offset, CSV_CR, size);
-        
+
         if (*line_end == NULL){
             if (size == MAX_LINE_LEN){
                 WARNING("line length exceeds %d characters, now double max_line_len\n", MAX_LINE_LEN);
@@ -250,9 +250,9 @@ static inline gboolean find_line_ending(reader_t *const reader,
             }
             else{
                 /*  end of trace, does not -1 here
-                 *  if file ending has no CRLF, then file_end points to end of file, return TRUE; 
+                 *  if file ending has no CRLF, then file_end points to end of file, return TRUE;
                  *  if file ending has one or more CRLF, it will goes to next while,
-                 *  then file_end points to end of file, still return TRUE 
+                 *  then file_end points to end of file, still return TRUE
                  */
                 *line_end = (char*)(reader->base->mapped_file) + reader->base->file_size;
                 *line_len = size;
@@ -263,7 +263,7 @@ static inline gboolean find_line_ending(reader_t *const reader,
     }
     // currently line_end points to LFCR
     *line_len = *line_end - ((char*)(reader->base->mapped_file) + reader->base->offset);
-    
+
     while ( (long) (*line_end - (char*)(reader->base->mapped_file)) < (long) (reader->base->file_size) - 1
            && (*(*line_end+1) == CSV_CR || *(*line_end+1) == CSV_LF ||
             *(*line_end+1) == CSV_TAB || *(*line_end+1) == CSV_SPACE) ){

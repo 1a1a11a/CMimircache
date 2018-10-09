@@ -103,7 +103,7 @@ void __optimal_evict_element(struct_cache* optimal, cache_line* cp){
     gint64 cur_ts = optimal_params->ts - 1;
 
     pq_node_t* node = (pq_node_t*) pqueue_pop(optimal_params->pq);
-    if (optimal->core->cache_debug_level == 1){
+    if (optimal->core->record_level == 1){
         // save eviction
         if (cp->type == 'l'){
             ((guint64*)(optimal->core->eviction_array))[cur_ts] = *(guint64*)(node->item);
@@ -151,7 +151,7 @@ gboolean optimal_add_element(struct_cache* cache, cache_line* cp){
     if (optimal_check_element(cache, cp)){
         __optimal_update_element(cache, cp);
 
-        if (cache->core->cache_debug_level == 1)
+        if (cache->core->record_level == 1)
             if ((gint)g_array_index(optimal_params->next_access, gint, optimal_params->ts-1) == -1)
                 __optimal_evict_element(cache, cp);
 
@@ -160,12 +160,23 @@ gboolean optimal_add_element(struct_cache* cache, cache_line* cp){
     else{
         __optimal_insert_element(cache, cp);
 
-        if (cache->core->cache_debug_level == 1)
+        if (cache->core->record_level == 1){
             if ((gint)g_array_index(optimal_params->next_access, gint, optimal_params->ts-1) == -1)
                 __optimal_evict_element(cache, cp);
-
-        if ( (long)g_hash_table_size( optimal_params->hashtable) > cache->core->size)
-            __optimal_evict_element(cache, cp);
+            else if ( (long)g_hash_table_size(optimal_params->hashtable) > cache->core->size)
+                __optimal_evict_element(cache, cp);
+            // not necessary
+            // else{
+            //     if (cp->type == 'l')
+            //         ((guint64*)cache->core->eviction_array)[optimal_params->ts-1] = 0;
+            //     else
+            //         ((gchar**)cache->core->eviction_array)[optimal_params->ts-1] = NULL;
+            // }
+        }
+        else{
+            if ( (long)g_hash_table_size( optimal_params->hashtable) > cache->core->size)
+                __optimal_evict_element(cache, cp);
+        }
         return FALSE;
     }
 }

@@ -97,7 +97,7 @@ struct cache_core{
 
 
     /** Jason: need to remove shared struct in cache and move all shared struct into reader **/
-    int                 cache_debug_level;  // 0 not debug, 1: prepare oracle, 2: compare to oracle
+    int                 record_level;  // 0 not debug, 1: record evictions, 2: compare to oracle
     void*               oracle;
     void*               eviction_array;     // Optimal Eviction Array, either guint64* or char**
     guint64             eviction_array_len;

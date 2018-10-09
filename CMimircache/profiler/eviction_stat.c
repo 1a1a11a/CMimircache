@@ -63,7 +63,7 @@ gint64* eviction_stat(reader_t* reader_in, struct_cache* cache, evict_stat_type 
      **/ 
     
     // get cache eviction list
-    cache->core->cache_debug_level = 1;
+    cache->core->record_level = 1;
     cache->core->eviction_array_len = reader_in->base->total_num;
     if (reader_in->base->total_num == -1)
         get_num_of_req(reader_in);

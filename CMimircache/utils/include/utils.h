@@ -9,17 +9,18 @@
 #ifndef UTILS_h
 #define UTILS_h
 
-#include "const.h" 
+#include "const.h"
 
 #include <stdio.h>
-#include <math.h> 
-#include <glib.h> 
+#include <math.h>
+#include <glib.h>
 #include <pthread.h>
 #include <unistd.h>
 
 #include <sched.h>
+#ifndef __APPLE__
 #include <sys/sysinfo.h>
-
+#endif
 
 
 int set_thread_affinity(pthread_t tid);

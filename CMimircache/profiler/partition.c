@@ -311,8 +311,8 @@ static void profiler_partition_thread(gpointer data, gpointer user_data){
     result[order]->hit_count = (long long) hit_count;
     result[order]->miss_count = (long long) miss_count;
     result[order]->total_count = hit_count + miss_count;
-    result[order]->hit_rate = (double) hit_count / (hit_count + miss_count);
-    result[order]->miss_rate = 1 - result[order]->hit_rate;
+    result[order]->hit_ratio = (double) hit_count / (hit_count + miss_count);
+    result[order]->miss_ratio = 1 - result[order]->hit_ratio;
 
 
     // clean up
@@ -364,7 +364,7 @@ return_res_t** profiler_partition(reader_t* reader_in, struct_cache* cache_in, i
         result[i] = g_new0(return_res_t, 1);
         result[i]->cache_size = bin_size * (i);
     }
-    result[0]->miss_rate = 1;
+    result[0]->miss_ratio = 1;
 
 
     // build parameters and send to thread pool

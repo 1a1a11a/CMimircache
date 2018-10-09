@@ -13,11 +13,11 @@
 
 /* when label/LBA is number, we plus one to it, to avoid cases of block 0 */
 
-/* special case in ascii reader 
- * multiple blank line in the middle 
- * each line has only one character 
- * multiple or non blank line at the end of file 
- * csv header when go back one line 
+/* special case in ascii reader
+ * multiple blank line in the middle
+ * each line has only one character
+ * multiple or non blank line at the end of file
+ * csv header when go back one line
  * ending in go back one line
  */
 
@@ -40,30 +40,30 @@ reader_t* setup_reader(const char* const file_loc,
      data_type: l: guint64, c: string
      Return value: a pointer to READER struct, the returned reader
      needs to be explicitly closed by calling close_reader */
-    
+
     int fd;
     struct stat st;
     reader_t *const reader = g_new0(reader_t, 1);
     reader->base = g_new0(reader_base_t, 1);
     reader->sdata = g_new0(reader_data_share_t, 1);
     reader->udata = g_new0(reader_data_unique_t, 1);
-    
+
     reader->sdata->break_points = NULL;
     reader->sdata->last_access = NULL;
     reader->sdata->reuse_dist = NULL;
     reader->sdata->max_reuse_dist = 0;
-    
-    reader->udata->hit_rate = NULL;
-    reader->udata->hit_rate_shards = NULL;
-    
+
+    reader->udata->hit_ratio = NULL;
+    reader->udata->hit_ratio_shards = NULL;
+
     reader->base->total_num = -1;
     reader->base->block_unit_size = block_unit_size;
-    reader->base->disk_sector_size = disk_sector_size; 
+    reader->base->disk_sector_size = disk_sector_size;
     reader->base->data_type = data_type;
     reader->base->init_params = NULL;
     reader->base->offset = 0;
-    
-    
+
+
     if (strlen(file_loc) > FILE_LOC_STR_SIZE-1){
         ERROR("file name/path is too long(>%d), "
                 "please use a shorter name\n", FILE_LOC_STR_SIZE);
@@ -72,20 +72,20 @@ reader_t* setup_reader(const char* const file_loc,
     else{
         strcpy(reader->base->file_loc, file_loc);
     }
-    
-    
+
+
     // set up mmap region
     if ( (fd = open (file_loc, O_RDONLY)) < 0){
         ERROR("Unable to open '%s', %s\n", file_loc, strerror(errno));
         exit(1);
     }
-    
+
     if ( (fstat (fd, &st)) < 0){
         close (fd);
         ERROR("Unable to fstat '%s', %s\n", file_loc, strerror(errno));
         exit(1);
     }
-    
+
     if ( (reader->base->mapped_file = mmap (NULL, st.st_size, PROT_READ, MAP_PRIVATE, fd, 0)) == MAP_FAILED){
         close (fd);
         reader->base->mapped_file = NULL;
@@ -93,10 +93,10 @@ reader_t* setup_reader(const char* const file_loc,
               strerror(errno));
         abort();
     }
-    
-    reader->base->file_size = st.st_size; 
-    
-    
+
+    reader->base->file_size = st.st_size;
+
+
     switch (file_type) {
         case CSV:
             csv_setup_Reader(file_loc, reader, setup_params);
@@ -142,7 +142,7 @@ void read_one_element(reader_t *const reader, cache_line_t *const c){
                 c->valid = FALSE;
                 break;
             }
-            
+
             find_line_ending(reader, &line_end, &line_len);
             strncpy(c->item, reader->base->mapped_file+reader->base->offset, line_len);
             c->item[line_len] = 0;
@@ -175,7 +175,7 @@ int go_back_one_line(reader_t *const reader){
         case PLAIN:
             if (reader->base->offset == 0)
                 return 1;
-            
+
             // use last record size to save loop
             const char * cp = reader->base->mapped_file + reader->base->offset;
             if (reader->base->record_size){
@@ -185,7 +185,7 @@ int go_back_one_line(reader_t *const reader){
             }
             else{
                 /*  no record size, can only happen when it is the last line
-                 *  or when it is called in go_back_two_lines 
+                 *  or when it is called in go_back_two_lines
                  */
                 cp --;
                 // find current line ending
@@ -197,7 +197,7 @@ int go_back_one_line(reader_t *const reader){
             }
             /** now cp should point to either the last letter/non-LFCR of current line
              *  or points to somewhere after the beginning of current line beginning
-             *  find the first character of current line 
+             *  find the first character of current line
              */
             while ( (void*)cp > reader->base->mapped_file &&
                    *cp != FILE_LF && *cp != FILE_CR){
@@ -205,16 +205,16 @@ int go_back_one_line(reader_t *const reader){
             }
             if ((void*)cp != reader->base->mapped_file)
                 cp ++; // jump over LFCR
-            
+
             if ((void*)cp < reader->base->mapped_file){
                 ERROR("current pointer points before mapped file\n");
                 exit(1);
             }
             // now cp points to the pos after LFCR before the line that should be read
-            reader->base->offset = (void*)cp - reader->base->mapped_file; 
-            
+            reader->base->offset = (void*)cp - reader->base->mapped_file;
+
             return 0;
-            
+
         case BINARY:
         case VSCSI:
             if (reader->base->offset >= reader->base->record_size)
@@ -222,7 +222,7 @@ int go_back_one_line(reader_t *const reader){
             else
                 return -1;
             return 0;
-            
+
         default:
             ERROR("cannot recognize reader type, given reader type: %c\n",
                   reader->base->type);
@@ -240,7 +240,7 @@ int go_back_two_lines(reader_t *const reader){
         case CSV:
         case PLAIN:
             if (go_back_one_line(reader) == 0){
-                reader->base->record_size = 0; 
+                reader->base->record_size = 0;
                 return go_back_one_line(reader);
             }
             else
@@ -263,8 +263,8 @@ int go_back_two_lines(reader_t *const reader){
 
 void read_one_element_above(reader_t *const reader, cache_line_t* c){
     /* read one cache line from reader precede current position,
-     * in other words, read the line above current line, 
-     * and currently file points to either the end of current line or 
+     * in other words, read the line above current line,
+     * and currently file points to either the end of current line or
      * beginning of next line.
      then store it in the pre-allocated cache_line c, current given
      size for the element(label) is 128 bytes(cache_line_label_size).
@@ -276,8 +276,8 @@ void read_one_element_above(reader_t *const reader, cache_line_t* c){
     else{
         c->valid = FALSE;
     }
-    
-    
+
+
 }
 
 
@@ -288,7 +288,7 @@ guint64 skip_N_elements(reader_t *const reader, const guint64 N){
      this will differ from N when it reaches the end of file
      */
     guint64 count=N;
-    
+
     switch (reader->base->type) {
         case CSV:
             csv_skip_N_elements(reader, N);
@@ -325,7 +325,7 @@ guint64 skip_N_elements(reader_t *const reader, const guint64 N){
                 WARNING("required to skip %lu requests, but only %lu requests left\n",
                         N, count);
             }
-            
+
             break;
         default:
             ERROR("cannot recognize reader type, given reader type: %c\n",
@@ -364,8 +364,8 @@ void reader_set_read_pos(reader_t *const reader, const double pos){
     if (reader->base->type == 'c' || reader->base->type == 'p'){
         reader->base->record_size = 0;
         /* for plain and csv file, if it points to the end, we need to rewind by 1,
-         * because mapped_file+file_size-1 is the last byte 
-         */ 
+         * because mapped_file+file_size-1 is the last byte
+         */
         if ( (pos > 1 && pos-1 < 0.0001) || (pos<1 && 1-pos< 0.0001))
             reader->base->offset --;
     }
@@ -375,13 +375,13 @@ void reader_set_read_pos(reader_t *const reader, const double pos){
 guint64 get_num_of_req(reader_t *const reader){
     if (reader->base->total_num !=0 && reader->base->total_num != -1)
         return reader->base->total_num;
-    
+
     guint64 old_offset = reader->base->offset;
     reader->base->offset = 0;
     guint64 n_req = 0;
     // why can't reset here?
     // reset_reader(reader);
-    
+
     switch (reader->base->type) {
         case CSV:
             /* same as plain text, except when has_header, it needs to reduce by 1  */
@@ -415,25 +415,25 @@ guint64 get_num_of_req(reader_t *const reader){
 
 reader_t* clone_reader(reader_t *const reader_in){
     /* this function clone the given reader to give an exactly same reader */
-    
+
     reader_t *const reader = setup_reader(reader_in->base->file_loc,
                                           reader_in->base->type,
                                           reader_in->base->data_type,
                                           reader_in->base->block_unit_size,
                                           reader_in->base->disk_sector_size,
-                                          reader_in->base->init_params); 
+                                          reader_in->base->init_params);
     memcpy(reader->sdata, reader_in->sdata, sizeof(reader_data_share_t));
-    
+
     // this is not ideal, but we don't want to multiple mapped files
     munmap (reader->base->mapped_file, reader->base->file_size);
     reader->base->mapped_file = reader_in->base->mapped_file;
     reader->base->offset = reader_in->base->offset;
-    reader->base->total_num = reader_in->base->total_num; 
+    reader->base->total_num = reader_in->base->total_num;
 
     if (reader->base->type == CSV){
         csv_params_t* params = reader->reader_params;
         csv_params_t* params_in = reader_in->reader_params;
-        
+
         fseek(reader->base->file, ftell(reader_in->base->file), SEEK_SET);
         memcpy(params->csv_parser, params_in->csv_parser, sizeof(struct csv_parser));
     }
@@ -450,7 +450,7 @@ int close_reader(reader_t *const reader){
      Otherwise, EOF is returned and the global variable errno is set to
      indicate the error.  In either case no further
      access to the stream is possible.*/
-    
+
     switch (reader->base->type) {
         case CSV:
             ;
@@ -469,11 +469,11 @@ int close_reader(reader_t *const reader){
             ERROR("cannot recognize reader type, given reader type: %c\n",
                   reader->base->type);
     }
-    
+
     munmap (reader->base->mapped_file, reader->base->file_size);
     if (reader->base->init_params)
         g_free(reader->base->init_params);
-    
+
     if (reader->reader_params)
         g_free(reader->reader_params);
 
@@ -481,21 +481,21 @@ int close_reader(reader_t *const reader){
         if (reader->sdata->last_access){
             g_free(reader->sdata->last_access);
         }
-        
+
         if (reader->sdata->reuse_dist){
             g_free(reader->sdata->reuse_dist);
         }
-        
+
         if (reader->sdata->break_points){
             g_array_free(reader->sdata->break_points->array, TRUE);
             g_free(reader->sdata->break_points);
         }
     }
     if (reader->udata){
-        if (reader->udata->hit_rate)
-            g_free(reader->udata->hit_rate);
-        if (reader->udata->hit_rate_shards)
-            g_free(reader->udata->hit_rate_shards);
+        if (reader->udata->hit_ratio)
+            g_free(reader->udata->hit_ratio);
+        if (reader->udata->hit_ratio_shards)
+            g_free(reader->udata->hit_ratio_shards);
     }
 
     g_free(reader->base);
@@ -513,7 +513,7 @@ int close_reader_unique(reader_t *const reader){
      Otherwise, EOF is returned and the global variable errno is set to
      indicate the error.  In either case no further
      access to the stream is possible.*/
-    
+
     switch (reader->base->type) {
         case CSV:
             ;
@@ -532,31 +532,31 @@ int close_reader_unique(reader_t *const reader){
             ERROR("cannot recognize reader type, given reader type: %c\n",
                   reader->base->type);
     }
-    
+
     if (reader->base->init_params)
         g_free(reader->base->init_params);
-    
+
     if (reader->reader_params)
         g_free(reader->reader_params);
 
     if (reader->udata){
-        if (reader->udata->hit_rate)
-            g_free(reader->udata->hit_rate);
-        if (reader->udata->hit_rate_shards)
-            g_free(reader->udata->hit_rate_shards);
+        if (reader->udata->hit_ratio)
+            g_free(reader->udata->hit_ratio);
+        if (reader->udata->hit_ratio_shards)
+            g_free(reader->udata->hit_ratio_shards);
     }
-    
+
     g_free(reader->base);
     g_free(reader->sdata);
     g_free(reader->udata);
-    
+
     g_free(reader);
     return 0;
 }
 
 
 
-// not supported 
+// not supported
 
 int read_one_request_all_info(reader_t *const reader, void* storage){
     /* read one cache line from reader,
@@ -593,7 +593,7 @@ int read_one_request_all_info(reader_t *const reader, void* storage){
 }
 
 void set_no_eof(reader_t *const reader){
-    // remove eof flag for reader 
+    // remove eof flag for reader
     switch (reader->base->type) {
         case CSV:
             csv_set_no_eof(reader);
@@ -630,19 +630,19 @@ cache_line_t* new_cacheline(){
     cp->op = -1;
     cp->size = 0;
     cp->block_unit_size = 0;
-    cp->disk_sector_size = 0; 
+    cp->disk_sector_size = 0;
     cp->valid = TRUE;
     cp->item_p = (gpointer)cp->item;
     cp->ts = 0;
-    cp->real_time = -1; 
-    
+    cp->real_time = -1;
+
     return cp;
 }
 
 
 cache_line_t *copy_cache_line(cache_line_t *cp){
     cache_line_t* cp_new = g_new0(cache_line_t, 1);
-    memcpy(cp_new, cp, sizeof(cache_line_t));    
+    memcpy(cp_new, cp, sizeof(cache_line_t));
     cp_new->item_p = (gpointer)cp_new->item;
     return cp_new;
 }
@@ -650,7 +650,7 @@ cache_line_t *copy_cache_line(cache_line_t *cp){
 
 void destroy_cacheline(cache_line_t* cp){
     if (cp->content)
-        g_free(cp->content); 
+        g_free(cp->content);
     g_free(cp);
 }
 

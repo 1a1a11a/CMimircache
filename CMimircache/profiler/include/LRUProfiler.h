@@ -18,6 +18,8 @@
 #include "cleaner.h"
 #include "const.h"
 #include "pqueue.h"
+#include "murmur3.h"
+
 
 #ifdef __cplusplus
 extern "C"
@@ -26,40 +28,34 @@ extern "C"
 
 
 guint64* get_hit_count_seq   (reader_t* reader,
-                              gint64 size,
-                              gint64 begin,
-                              gint64 end);
-double* get_hit_rate_seq     (reader_t* reader,
-                              gint64 size,
-                              gint64 begin,
-                              gint64 end);
+                              gint64 size);
+double* get_hit_ratio_seq     (reader_t* reader,
+                              gint64 size);
 double* get_miss_rate_seq    (reader_t* reader,
-                              gint64 size,
-                              gint64 begin,
-                              gint64 end);
-gint64* get_reuse_dist_seq   (reader_t* reader,
-                              gint64 begin,
-                              gint64 end);
+                              gint64 size);
+gint64* get_reuse_dist_seq   (reader_t* reader);
 
-gint64* get_future_reuse_dist(reader_t* reader,
-                              gint64 begin,
-                              gint64 end);
+gint64* get_future_reuse_dist(reader_t* reader);
 
 gint64* get_dist_to_last_access(reader_t* reader);
 
 gint64* get_reuse_time(reader_t* reader);
 
 guint64* get_hit_count_seq_shards(reader_t* reader,
+                                  gint64 size,
+                                  double sample_ratio);
+
+double* get_hit_ratio_seq_shards(reader_t* reader,
                                 gint64 size,
                                 double sample_ratio);
 
-double* get_hit_rate_seq_shards(reader_t* reader,
-                                gint64 size,
-                                double sample_ratio);
+guint64* get_hit_count_phase(reader_t* reader,
+                            gint64 current_phase,
+                            gint64 num_phases);
 
-double* get_hit_rate_phase(reader_t* reader,
-                                gint64 current_phase,
-                                gint64 num_phases);
+double* get_hit_ratio_phase(reader_t* reader,
+                           gint64 current_phase,
+                           gint64 num_phases);
 
 guint64* get_hitcount_withsize_seq(reader_t* reader,
                                    gint64 size,

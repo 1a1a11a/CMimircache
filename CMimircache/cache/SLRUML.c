@@ -19,16 +19,16 @@ void insert_at_segment(struct_cache* SLRUML, cache_line* cp, int segment){
     SLRUML_params_t* SLRUML_params = (SLRUML_params_t*)(SLRUML->cache_params);
     __LRU_insert_element(SLRUML_params->LRUs[segment], cp);
     SLRUML_params->current_sizes[segment] ++;
-    
+
     if (SLRUML_params->num_insert_at_segments == NULL)
         SLRUML_params->num_insert_at_segments = g_new0(gint64, SLRUML_params->N_segments);
-    SLRUML_params->num_insert_at_segments[segment] ++; 
-    
-    
+    SLRUML_params->num_insert_at_segments[segment] ++;
+
+
     int i;
     for (i=segment; i>=1; i--){
-        
-        if (SLRUML_params->current_sizes[i] > SLRUML_params->LRUs[i]->core->size){
+
+        if ((gint64) SLRUML_params->current_sizes[i] > (gint64) SLRUML_params->LRUs[i]->core->size){
             gpointer old_itemp = cp->item_p;
             gpointer evicted = __LRU__evict_with_return(SLRUML_params->LRUs[i], cp);
             SLRUML_params->current_sizes[i] --;
@@ -62,7 +62,7 @@ void __SLRUML_insert_element(struct_cache* SLRUML, cache_line* cp){
     else{
         // normal LRU mode by inserting at last segment
         insert_at_segment(SLRUML, cp, SLRUML_params->N_segments-1);
-        
+
         long size = 0;
         int i;
         for (i=0; i<SLRUML_params->N_segments; i++)
@@ -71,7 +71,7 @@ void __SLRUML_insert_element(struct_cache* SLRUML, cache_line* cp){
             SLRUML_params->mode = TRUE;
 //            printf("switch to non-LRU mode\n");
         }
-        
+
     }
 }
 
@@ -90,9 +90,9 @@ void __SLRUML_update_element(struct_cache* cache, cache_line* cp){
     int i;
     for (i=0; i<SLRUML_params->N_segments; i++){
         if (LRU_check_element(SLRUML_params->LRUs[i], cp)){
-            /* move to upper LRU 
-             * first remove from current LRU 
-             * then add to upper LRU, 
+            /* move to upper LRU
+             * first remove from current LRU
+             * then add to upper LRU,
              * if upper LRU is full, evict one, insert into current LRU
              */
                 LRU_remove_element(SLRUML_params->LRUs[i], cp->item_p);
@@ -105,8 +105,8 @@ void __SLRUML_update_element(struct_cache* cache, cache_line* cp){
 
 
 void __SLRUML_evict_element(struct_cache* SLRUML, cache_line* cp){
-    /* because insert only happens at LRU0, 
-     * then eviction also can only happens at LRU0 
+    /* because insert only happens at LRU0,
+     * then eviction also can only happens at LRU0
      */
     SLRUML_params_t* SLRUML_params = (SLRUML_params_t*)(SLRUML->cache_params);
 
@@ -125,15 +125,15 @@ void __SLRUML_evict_element(struct_cache* SLRUML, cache_line* cp){
                 (unsigned long)SLRUML_params->current_sizes[0]);
         exit(1);
     }
-    
+
 #endif
 }
 
 
 gpointer __SLRUML__evict_with_return(struct_cache* SLRUML, cache_line* cp){
-    /** evict one element and return the evicted element, 
+    /** evict one element and return the evicted element,
      user needs to free the memory of returned data **/
-    
+
 //    SLRUML_params_t* SLRUML_params = (SLRUML_params_t*)(SLRUML->cache_params);
 //    return __LRU__evict_with_return(SLRUML_params->LRUs[0], cp);
     return NULL;
@@ -199,12 +199,12 @@ void SLRUML_destroy_unique(struct_cache* cache){
      in Optimal, next_access should not be freed in destroy_unique,
      because it is shared between different caches copied from the original one.
      */
-    
+
     SLRUML_params_t* SLRUML_params = (SLRUML_params_t*)(cache->cache_params);
     int i;
     for (i=0; i<SLRUML_params->N_segments; i++)
         LRU_destroy(SLRUML_params->LRUs[i]);
-    g_free(SLRUML_params->LRUs); 
+    g_free(SLRUML_params->LRUs);
     g_free(SLRUML_params->current_sizes);
     cache_destroy_unique(cache);
 }
@@ -215,7 +215,7 @@ struct_cache* SLRUML_init(guint64 size, char data_type, int block_size, void* pa
     cache->cache_params = g_new0(struct SLRUML_params, 1);
     SLRUML_params_t* SLRUML_params = (SLRUML_params_t*)(cache->cache_params);
     SLRUML_init_params_t* init_params = (SLRUML_init_params_t*) params;
-    
+
     cache->core->type                   =   e_SLRUML;
     cache->core->cache_init             =   SLRUML_init;
     cache->core->destroy                =   SLRUML_destroy;
@@ -228,9 +228,9 @@ struct_cache* SLRUML_init(guint64 size, char data_type, int block_size, void* pa
     cache->core->__evict_with_return    =   __SLRUML__evict_with_return;
     cache->core->get_size               =   SLRUML_get_size;
     cache->core->cache_init_params      =   params;
-    
+
     SLRUML_params->mode = FALSE;
-    
+
     int i;
     long filesize = 0;
     if ((init_params->hint_loc)[0] == 0)
@@ -248,7 +248,7 @@ struct_cache* SLRUML_init(guint64 size, char data_type, int block_size, void* pa
 //        int counter[3]={0, 0, 0};
 //        for (i=0; i<filesize; i++)
 //            counter[init_params->hints[i]] ++;
-//        
+//
 //        printf("\n%d:%d:%d\n\n", counter[0], counter[1], counter[2]);
 
     }
@@ -260,13 +260,13 @@ struct_cache* SLRUML_init(guint64 size, char data_type, int block_size, void* pa
                    init_params->hint_loc, filesize, i, init_params->hints[i]);
             exit(1);
         }
-    
-    
-    
+
+
+
     SLRUML_params->hints = init_params->hints;
     strcpy(SLRUML_params->hint_loc, init_params->hint_loc);
-    
-    
+
+
     SLRUML_params->LRUs = g_new(cache_t*, 20);
     unsigned long size_temp = 4096;
     unsigned long size_left = size;
@@ -279,7 +279,7 @@ struct_cache* SLRUML_init(guint64 size, char data_type, int block_size, void* pa
     }
 //    printf("%ld %d, out %ld: %ld\n", size, i, size_left, size_temp);
     SLRUML_params->LRUs[i] = LRU_init(size_left, data_type, 0, NULL);
-    
+
     SLRUML_params->N_segments = i+1;
     init_params->N_segments = i+1;
 //    printf("%ld using %d segments: ", size, i);
@@ -289,7 +289,7 @@ struct_cache* SLRUML_init(guint64 size, char data_type, int block_size, void* pa
 //    printf("\n");
 
     SLRUML_params->current_sizes = g_new0(uint64_t, SLRUML_params->N_segments);
-    
+
     return cache;
 }
 

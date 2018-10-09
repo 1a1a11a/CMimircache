@@ -53,7 +53,7 @@ void __LRU_update_element(struct_cache* cache, cache_line* cp){
 void __LRU_evict_element(struct_cache* LRU, cache_line* cp){
     struct LRU_params* LRU_params = (struct LRU_params*)(LRU->cache_params);
 
-    if (LRU->core->cache_debug_level == 2){     // compare to Oracle
+    if (LRU->core->record_level == 2){     // compare to Oracle
         while (LRU_params->ts > (gint64) g_array_index(LRU->core->bp->array, guint64, LRU->core->bp_pos)){
             if ( (long) g_array_index(LRU->core->bp->array, guint64, LRU->core->bp_pos) -
                 (long) g_array_index(LRU->core->bp->array, guint64, LRU->core->bp_pos-1) != 0 ){
@@ -105,7 +105,7 @@ void __LRU_evict_element(struct_cache* LRU, cache_line* cp){
         
     }
     
-    else if (LRU->core->cache_debug_level == 1){
+    else if (LRU->core->record_level == 1){
         // record eviction list
         
         gpointer data = g_queue_pop_head(LRU_params->list);

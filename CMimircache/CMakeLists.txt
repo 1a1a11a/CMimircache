@@ -53,7 +53,13 @@ add_executable(CMimircache ${dirCMimircache})
 
 target_link_libraries(CMimircache cache cacheReader profiler dataStructure utils m ${LIBS} ${CMAKE_THREAD_LIBS_INIT} -lpthread)
 
+add_executable(readerTest test/readerTest.c)
+target_link_libraries(readerTest cacheReader utils m ${LIBS} ${CMAKE_THREAD_LIBS_INIT} -lpthread)
+add_test(NAME readerTest COMMAND readerTest)
 
+add_executable(heatmapTest test/heatmapTest.c)
+target_link_libraries(heatmapTest cache cacheReader profiler dataStructure utils m ${LIBS} ${CMAKE_THREAD_LIBS_INIT} -lpthread)
+add_test(NAME heatmapTest COMMAND heatmapTest)
 
 
 
