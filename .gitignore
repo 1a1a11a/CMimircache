@@ -8,3 +8,5 @@
 new*.*
 akamai.*
 test.c
+makefile
+mimircache.c
