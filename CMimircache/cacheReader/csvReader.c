@@ -163,7 +163,7 @@ void csv_read_one_element(reader_t *const reader, cache_line *const c){
             csv_fini(params->csv_parser, csv_cb1, csv_cb2, reader);
         else{
             ERROR("in parsing csv file, current offset %lu, next string %s\n",
-                  reader->base->offset, (char*) (reader->base->mapped_file + reader->base->offset));
+                  (unsigned long) reader->base->offset, (char*) (reader->base->mapped_file + reader->base->offset));
             abort();
         }
     }

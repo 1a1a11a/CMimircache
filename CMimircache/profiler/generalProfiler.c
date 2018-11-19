@@ -92,14 +92,14 @@ static void profiler_thread(gpointer data, gpointer user_data) {
                "Mithril prefetch %lu, hit %lu, accuracy: %lf, prefetch table size %u\n",
                cache->core->size, Mithril_params->cache->core->size,
                (double)hit_count / (hit_count + miss_count),
-               ((Mithril_params_t*)(cache->cache_params))->num_of_check,
-               prefetch, hit, (double)hit / prefetch,
+               (unsigned long) ((Mithril_params_t*)(cache->cache_params))->num_of_check,
+               (unsigned long) prefetch, (unsigned long) hit, (double)hit / prefetch,
                g_hash_table_size(Mithril_params->prefetch_hashtable));
 
         if (Mithril_params->sequential_type == 1) {
             gint64 prefetch2 = ((Mithril_params_t*)(cache->cache_params))->num_of_prefetch_sequential;
             gint64 hit2 = ((Mithril_params_t*)(cache->cache_params))->hit_on_prefetch_sequential;
-            printf("sequential prefetching, prefetch %lu, hit %lu, accuracy %lf\n", prefetch2, hit2, (double)hit2 / prefetch2);
+            printf("sequential prefetching, prefetch %lu, hit %lu, accuracy %lf\n", (unsigned long) prefetch2, (unsigned long) hit2, (double)hit2 / prefetch2);
             printf("overall size %ld, hit rate %lf, efficiency %lf\n", Mithril_params->cache->core->size,
                    (double)hit_count / (hit_count + miss_count), (double)(hit + hit2) / (prefetch + prefetch2));
         }
@@ -108,8 +108,8 @@ static void profiler_thread(gpointer data, gpointer user_data) {
             gint64 prefetch2 = ((struct AMP_params*)(Mithril_params->cache->cache_params))->num_of_prefetch;
             gint64 hit2 = ((struct AMP_params*)(Mithril_params->cache->cache_params))->num_of_hit;
             printf("Mithril_AMP cache size %ld, prefetch %lu, hit %lu, accuracy: %lf, total prefetch %lu, hit %lu, accuracy: %lf\n",
-                   Mithril_params->cache->core->size, prefetch2, hit2, (double)hit2 / prefetch2,
-                   prefetch + prefetch2, hit + hit2, (double)(hit + hit2) / (prefetch + prefetch2));
+                   Mithril_params->cache->core->size, (unsigned long) prefetch2, (unsigned long) hit2, (double)hit2 / prefetch2,
+                   (unsigned long) (prefetch + prefetch2), (unsigned long) (hit + hit2), (double)(hit + hit2) / (prefetch + prefetch2));
 
         }
     }
@@ -120,7 +120,7 @@ static void profiler_thread(gpointer data, gpointer user_data) {
                "hit %lu, precision %lf\n", (unsigned long)PG_params->init_size,
                PG_params->cache->core->size,
                (double)hit_count / (hit_count + miss_count),
-               PG_params->num_of_prefetch, PG_params->num_of_hit,
+               (unsigned long) PG_params->num_of_prefetch, (unsigned long) PG_params->num_of_hit,
                (double)(PG_params->num_of_hit) / (PG_params->num_of_prefetch));
     }
 
@@ -130,7 +130,7 @@ static void profiler_thread(gpointer data, gpointer user_data) {
 
         printf("\nAMP cache size %ld, hit rate %lf, prefetch %lu, hit %lu, accuracy: %lf\n\n",
                cache->core->size, (double)hit_count / (hit_count + miss_count),
-               prefech, hit, (double)hit / prefech);
+               (unsigned long) prefech, (unsigned long) hit, (double)hit / prefech);
     }
 
 

@@ -382,7 +382,7 @@ void hm_LRU_effective_size_thread(gpointer data, gpointer user_data) {
             item = cache->core->__evict_with_return(cache, cp);
             last_ts = GPOINTER_TO_UINT(g_hash_table_lookup(last_access_time_ght, item)) - 1;
             if (last_ts < 0) {
-                ERROR("last access time < 0, value %ld\n", last_ts);
+                ERROR("last access time < 0, value %ld\n", (long) last_ts);
                 abort();
             }
             DEBUG("ts %lu evict %s last access time %lu\n", cur_ts, (char*)item, last_ts);
@@ -401,7 +401,9 @@ void hm_LRU_effective_size_thread(gpointer data, gpointer user_data) {
         effective_cache_size[cur_ts] = current_effective_size;
 
         if (current_effective_size > cache_size) {
-            ERROR("ts %lu effective size %lu, cache size %lu\n", cur_ts, current_effective_size, order * bin_size);
+            ERROR("ts %lu effective size %lu, cache size %lu\n",
+                  (unsigned long) cur_ts, (unsigned long) current_effective_size,
+                  (unsigned long) (order * bin_size));
             abort();
         }
 
@@ -443,12 +445,13 @@ void hm_LRU_effective_size_thread(gpointer data, gpointer user_data) {
                                    (g_array_index(break_points, guint64, i + 1) - g_array_index(break_points, guint64, i));
 
         if (dd->matrix[i][order - 1] / cache_size > 1) {
-            ERROR("cache size %lu, %lu th bp, effective size %lf\n", cache_size, i, dd->matrix[i][order - 1]);
+            ERROR("cache size %lu, %lu th bp, effective size %lf\n",
+                    (unsigned long) cache_size, (unsigned long) i, dd->matrix[i][order - 1]);
             for (j = g_array_index(break_points, guint64, i); j < g_array_index(break_points, guint64, i + 1); j++)
-                printf("effective size at %lu (%lu-%lu): %lu\n", j,
-                       g_array_index(break_points, guint64, i),
-                       g_array_index(break_points, guint64, i + 1),
-                       effective_cache_size[j]);
+                printf("effective size at %lu (%lu-%lu): %lu\n", (unsigned long) j,
+                       (unsigned long) g_array_index(break_points, guint64, i),
+                       (unsigned long) g_array_index(break_points, guint64, i + 1),
+                       (unsigned long) effective_cache_size[j]);
             abort();
         }
 

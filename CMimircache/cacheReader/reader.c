@@ -323,7 +323,7 @@ guint64 skip_N_elements(reader_t *const reader, const guint64 N){
                                    / reader->base->record_size);
                 reader->base->offset = reader->base->file_size;
                 WARNING("required to skip %lu requests, but only %lu requests left\n",
-                        N, count);
+                        (unsigned long) N, (unsigned long) count);
             }
 
             break;

@@ -199,10 +199,10 @@ guint64* get_hitcount_withsize_seq(reader_t* reader, gint64 size, int block_unit
         // new 170428
         if (cp->size == 0){
             if (cp->type == 'c'){
-                WARNING("ts %lu, request lbn %s size 0\n", ts, (char*)(cp->item_p));
+                WARNING("ts %lu, request lbn %s size 0\n", (unsigned long) ts, (char*)(cp->item_p));
             }
             else{
-                WARNING("ts %lu, request lbn %ld size 0\n", ts, *(gint64*)(cp->item_p));
+                WARNING("ts %lu, request lbn %ld size 0\n", (unsigned long) ts, *(long*)(cp->item_p));
             }
         }
 
@@ -553,7 +553,8 @@ gint64* get_reuse_dist_seq(reader_t* reader){
      * It is the user's responsibility to release the memory of hit count array returned by this function
      */
 
-    guint64 ts = 0, max_rd = 0;
+    guint64 ts = 0;
+    gint64 max_rd = 0;
     gint64 reuse_dist;
 
     if (reader->base->total_num == -1)
@@ -596,7 +597,7 @@ gint64* get_reuse_dist_seq(reader_t* reader){
     while (cp->valid){
         if (/* DISABLES CODE */ (0)){
             if (cp->type == 'l')
-                printf("read in %ld\n", *(gint64*)(cp->item_p));
+                printf("read in %ld\n", *(long*)(cp->item_p));
             else
                 printf("read in %s\n", (char*) (cp->item_p));
         }
@@ -636,7 +637,8 @@ gint64* get_future_reuse_dist(reader_t* reader){
      *  returned by this function.
      */
 
-    gint64 ts = 0, max_rd = 0;
+    guint64 ts = 0;
+    gint64 max_rd = 0;
     gint64 reuse_dist;
 
     if (reader->base->total_num == -1)
@@ -685,7 +687,7 @@ gint64* get_future_reuse_dist(reader_t* reader){
         splay_tree = process_one_element(cp, splay_tree, hash_table,
                                          ts, &reuse_dist);
         if (reader->base->total_num-1-(long)ts < 0){
-            ERROR("array index %ld out of range\n", reader->base->total_num-1-ts);
+            ERROR("array index %ld out of range\n", (long) (reader->base->total_num-1-ts));
             exit(1);
         }
         reuse_dist_array[reader->base->total_num-1-ts] = reuse_dist;
@@ -773,7 +775,7 @@ gint64* get_dist_to_last_access(reader_t* reader){
     while (cp->valid){
         if (/* DISABLES CODE */ (0)){
             if (cp->type == 'l')
-                printf("read in %ld\n", *(gint64*)(cp->item_p));
+                printf("read in %ld\n", *(long*)(cp->item_p));
             else
                 printf("read in %s\n", (char*) (cp->item_p));
         }
@@ -852,7 +854,8 @@ gint64* get_reuse_time(reader_t* reader){
      * It is the user's responsibility to release the memory of hit count array returned by this function
      */
 
-    guint64 ts = 0, max_rt = 0;
+    guint64 ts = 0;
+    gint64 max_rt = 0;
     gint64 rt;
     gint64* value;
 
@@ -899,7 +902,7 @@ gint64* get_reuse_time(reader_t* reader){
     while (cp->valid){
         if (/* DISABLES CODE */ (0)){
             if (cp->type == 'l')
-                printf("read in %ld\n", *(gint64*)(cp->item_p));
+                printf("read in %ld\n", *(long*)(cp->item_p));
             else
                 printf("read in %s\n", (char*) (cp->item_p));
         }

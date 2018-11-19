@@ -45,7 +45,7 @@ gboolean __LFU_fast_verify(struct_cache* LFU_fast){
         return TRUE;
     else{
         ERROR("hashtable size %u, queue accu size %lu\n",
-              g_hash_table_size(LFU_fast_params->hashtable), current_size);
+              g_hash_table_size(LFU_fast_params->hashtable), (unsigned long) current_size);
         return FALSE;
     }
 }

@@ -44,7 +44,7 @@ extern "C"
                 /* the first entry in the mining table should be the block number */
                 if (*(gint64*)(key) != row_in_mtable[0]){
                     ERROR("hashtable mining key value not match %ld %ld\n",
-                            *(gint64*)(key), row_in_mtable[0]);
+                            *(long*)(key), (long) (row_in_mtable[0]));
                     abort();
                 }
             }
@@ -63,7 +63,7 @@ extern "C"
             if (Mithril->core->data_type == 'l'){
                 if (*(gint64*)(key) != row_in_rtable[0]){
                     ERROR("hashtable recording key value not match %ld %ld\n",
-                          *(gint64*)(key), row_in_rtable[0]);
+                          *(long*)(key), (long) (row_in_rtable[0]));
                     abort();
                 }
             }
@@ -89,7 +89,7 @@ extern "C"
                             (Mithril_params->cache->cache_params))->hashtable;
         if (!g_hash_table_contains(h, key)){
             ERROR("prefetched %ld not in cache %d\n",
-                  *(gint64*)key, GPOINTER_TO_INT(value));
+                  *(long*)key, GPOINTER_TO_INT(value));
             abort();
         }
     }
@@ -103,7 +103,7 @@ extern "C"
         for (i=0; i<rmtable->mining_table->len; i++)
             ERROR("%d: %s %ld\n", i,
                    (char*)*(GET_ROW_IN_MTABLE(Mithril_params, i)),
-                   *(GET_ROW_IN_MTABLE(Mithril_params, i)));
+                   *(long*)(GET_ROW_IN_MTABLE(Mithril_params, i)));
     }
     
     void verify_mining_table(struct_cache* Mithril){
@@ -279,8 +279,8 @@ extern "C"
                                   "but it is not in recording hashtable "
                                   "%s, pointer %ld, current ts %ld\n",
                                   (char*)(row_in_rtable[0]),
-                                  rmtable->rtable_cur_row,
-                                  Mithril_params->ts);
+                                  (long) rmtable->rtable_cur_row,
+                                  (long) Mithril_params->ts);
                         
                         g_hash_table_remove(rmtable->hashtable,
                                             (char*)(row_in_rtable[0]));
@@ -290,12 +290,12 @@ extern "C"
                             ERROR("remove old entry from recording table, "
                                   "but it is not in recording hashtable, "
                                   "block %ld, recording table pos %ld, ts %ld ",
-                                  *row_in_rtable, rmtable->rtable_cur_row,
-                                  Mithril_params->ts);
+                                  *(long*)row_in_rtable, (long) rmtable->rtable_cur_row,
+                                  (long) Mithril_params->ts);
                 
                             long temp = rmtable->rtable_cur_row - 1;
                             fprintf(stderr, "previous line block %ld\n",
-                                   *(gint64*)(GET_ROW_IN_RTABLE(Mithril_params, temp)));
+                                   *(long*)(GET_ROW_IN_RTABLE(Mithril_params, temp)));
                             abort();
                         }
                         

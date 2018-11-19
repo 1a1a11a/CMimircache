@@ -81,13 +81,13 @@ void __LRU_evict_element(struct_cache* LRU, cache_line* cp){
         gpointer data = g_queue_peek_head(LRU_params->list);
         if (cp->type == 'l'){
             if (*(guint64*)(data) != ((guint64*)LRU->core->oracle)[LRU_params->ts]){
-                printf("error at %lu, LRU: %lu, Optimal: %lu\n", LRU_params->ts,
-                       *(guint64*)(data), ((guint64*)LRU->core->oracle)[LRU_params->ts]);
+                printf("error at %lu, LRU: %lu, Optimal: %lu\n", (unsigned long) LRU_params->ts,
+                       *(unsigned long*)(data), ((unsigned long*)LRU->core->oracle)[LRU_params->ts]);
                 LRU->core->evict_err ++;
             }
             else
-                printf("no error at %lu: %lu, %lu\n", LRU_params->ts, *(guint64*)(data),
-                       *(guint64*)(g_queue_peek_tail(LRU_params->list)));
+                printf("no error at %lu: %lu, %lu\n", (unsigned long) LRU_params->ts, *(unsigned long*)(data),
+                       *(unsigned long*)(g_queue_peek_tail(LRU_params->list)));
             gpointer data_oracle = g_hash_table_lookup(LRU_params->hashtable,
                                         (gpointer)&((guint64* )LRU->core->oracle)[LRU_params->ts]);
             g_queue_delete_link(LRU_params->list, (GList*)data_oracle);

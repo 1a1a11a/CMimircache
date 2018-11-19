@@ -113,7 +113,7 @@ partition_t* get_partition(reader_t* reader, struct cache* cache, uint8_t n_part
             partitions->jump_over_count = counter;
 
         if (get_size(cache) > (gint64) cache_size)
-            fprintf(stderr, "ERROR current size %lu, given size %ld\n", (unsigned long)get_size(cache), cache_size);
+            fprintf(stderr, "ERROR current size %lu, given size %ld\n", (unsigned long)get_size(cache), (long) cache_size);
 
         read_one_element(reader, cp);
         counter ++;

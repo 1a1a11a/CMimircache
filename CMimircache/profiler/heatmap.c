@@ -366,10 +366,10 @@ draw_dict* heatmap_rd_distribution(reader_t* reader, char mode, int num_of_threa
     // this is used to make sure length of x and y are approximate same, not different by too much
     if (reader->sdata->max_reuse_dist == 0 || break_points->len == 0) {
         ERROR("did you call top level function? max reuse distance %ld, bp len %u\n",
-              reader->sdata->max_reuse_dist, break_points->len);
+              (long) reader->sdata->max_reuse_dist, break_points->len);
         exit(1);
     }
-    double log_base = get_log_base(reader->sdata->max_reuse_dist, break_points->len);
+    double log_base = get_log_base((unsigned long) reader->sdata->max_reuse_dist, break_points->len);
     reader->udata->log_base = log_base;
 
     // create draw_dict storage
@@ -377,7 +377,7 @@ draw_dict* heatmap_rd_distribution(reader_t* reader, char mode, int num_of_threa
     dd->xlength = break_points->len - 1;
 
     // the last one is used for store cold miss; rd=0 and rd=1 are combined at first bin (index=0)
-    dd->ylength = (long) ceil(log(reader->sdata->max_reuse_dist) / log(log_base));
+    dd->ylength = (guint64) ceil(log((double)reader->sdata->max_reuse_dist) / log(log_base));
     dd->matrix = g_new(double*, break_points->len);
     for (i = 0; i < dd->xlength; i++)
         dd->matrix[i] = g_new0(double, dd->ylength);

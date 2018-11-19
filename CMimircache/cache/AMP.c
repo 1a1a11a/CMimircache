@@ -63,7 +63,7 @@ void createPages_no_eviction(struct_cache* AMP, gint64 block_begin, gint length)
     /* this function currently is used for prefetching */
     struct AMP_params* AMP_params = (struct AMP_params*)(AMP->cache_params);
     if (length <= 0 || block_begin <= 1){
-        fprintf(stderr, "error AMP prefetch length %d, begin from %ld\n", length, block_begin);
+        fprintf(stderr, "error AMP prefetch length %d, begin from %ld\n", length, (long) block_begin);
         abort();
     }
 //    printf("prefetch %d pages\n", length);
@@ -93,18 +93,18 @@ void createPages_no_eviction(struct_cache* AMP, gint64 block_begin, gint length)
     struct AMP_page* prev_page = AMP_lookup(AMP, block_begin - 1);
     if (last_page == NULL){ // || prev_page == NULL){       // prev page be evicted?
         ERROR("got NULL for page %p %p, block %ld %ld\n", prev_page, last_page,
-               block_begin-1, lastblock);
+              (long) (block_begin-1), (long) lastblock);
     }
     
     // new 1704
     if (prev_page == NULL){
-        last_page->p = length;
-        last_page->g = (int) (last_page->p/2);
+        last_page->p = (gint16) length;
+        last_page->g = (gint16) (last_page->p/2);
         AMP_lookup(AMP, last_page->block_number)->tag = TRUE;
     }
     // end
     else{
-        last_page->p = MAX(prev_page->p, last_page->g +1);
+        last_page->p = (gint16) MAX(prev_page->p, last_page->g +1);
         last_page->g = prev_page->g;
         AMP_lookup(AMP, last_page->block_number-prev_page->g)->tag = TRUE;
     }
@@ -144,9 +144,9 @@ void checkHashTable(gpointer key, gpointer value, gpointer user_data){
     GList *node = (GList*) value;
     struct AMP_page* page = node->data;
     if (page->block_number != *(gint64*)key || page->block_number < 0)
-        printf("find error in page, page block %ld, key %ld\n", page->block_number, *(gint64*)key);
+        printf("find error in page, page block %ld, key %ld\n", (long) page->block_number, *(long*)key);
     if (page->p < page->g){
-        ERROR("page %ld, p %d, g %d\n", page->block_number, page->p, page->g);
+        ERROR("page %ld, p %d, g %d\n", (long) page->block_number, page->p, page->g);
         abort(); 
     }
 }
@@ -214,7 +214,7 @@ void __AMP_evict_element(struct_cache* AMP, cache_line* cp){
 #endif
         gboolean result = g_hash_table_remove(AMP_params->hashtable, (gconstpointer)&(page->block_number));
         if (result == FALSE){
-            fprintf(stderr, "ERROR nothing removed, block %ld\n", page->block_number);
+            fprintf(stderr, "ERROR nothing removed, block %ld\n", (long) page->block_number);
             exit(1);
         }
         g_hash_table_remove(AMP_params->prefetched, &(page->block_number));
@@ -258,7 +258,7 @@ void* __AMP__evict_with_return(struct_cache* AMP, cache_line* cp){
     if (page->old || page->accessed){
         gboolean result = g_hash_table_remove(AMP_params->hashtable, (gconstpointer)&(page->block_number));
         if (result == FALSE){
-            fprintf(stderr, "ERROR nothing removed, block %ld\n", page->block_number);
+            fprintf(stderr, "ERROR nothing removed, block %ld\n", (long) page->block_number);
             exit(1);
         }
         gint64* return_data = g_new(gint64, 1);
