@@ -335,12 +335,12 @@ void hm_LRU_effective_size_thread(gpointer data, gpointer user_data) {
 
         // add to cache
         if (cache->core->check_element(cache, cp)) {
-            DEBUG("ts %lu, read %s hit\n", cur_ts, (char*) (cp->item));
+            DEBUG("ts %ld, read %s hit\n", (long) cur_ts, (char*) (cp->item));
             cache->core->__update_element(cache, cp);
             increase_b = FALSE;
         }
         else {
-            DEBUG("ts %lu, read %s miss\n", cur_ts, (char*) (cp->item));
+            DEBUG("ts %ld, read %s miss\n", (long) cur_ts, (char*) (cp->item));
             cache->core->__insert_element(cache, cp);
             increase_b = TRUE;
         }
@@ -352,7 +352,7 @@ void hm_LRU_effective_size_thread(gpointer data, gpointer user_data) {
                 abort();
             }
             current_effective_size += 1;
-            DEBUG("ts %lu add one %lu (size %lu)\n", cur_ts, current_effective_size, cache_size);
+            DEBUG("ts %ld add one %ld (size %ld)\n", (long) cur_ts, (long) current_effective_size, (long) cache_size);
         }
         else {
             if (increase_b) {
@@ -363,7 +363,7 @@ void hm_LRU_effective_size_thread(gpointer data, gpointer user_data) {
 
         if (future_reuse_dist[cur_ts] == -1 || future_reuse_dist[cur_ts] >= (gint64) cache_size) {
             current_effective_size -= 1;
-            DEBUG("ts %lu reduce one due to %ld %lu\n", cur_ts, future_reuse_dist[cur_ts], current_effective_size);
+            DEBUG("ts %ld reduce one due to %ld %ld\n", (long) cur_ts, (long) future_reuse_dist[cur_ts], (long) current_effective_size);
         }
 
 //            if (current_effective_size > cache_size){
@@ -378,21 +378,21 @@ void hm_LRU_effective_size_thread(gpointer data, gpointer user_data) {
          *  so need to find out when this item was added and reduced the size of all time after it
          */
         while ( (long)cache->core->get_size(cache) > cache->core->size ) {
-            DEBUG("ts %lu size %ld %ld\n", cur_ts, (long)cache->core->get_size(cache), (long) (cache->core->size));
+            DEBUG("ts %ld size %ld %ld\n", (long) cur_ts, (long)cache->core->get_size(cache), (long) (cache->core->size));
             item = cache->core->__evict_with_return(cache, cp);
             last_ts = GPOINTER_TO_UINT(g_hash_table_lookup(last_access_time_ght, item)) - 1;
             if (last_ts < 0) {
                 ERROR("last access time < 0, value %ld\n", (long) last_ts);
                 abort();
             }
-            DEBUG("ts %lu evict %s last access time %lu\n", cur_ts, (char*)item, last_ts);
+            DEBUG("ts %ld evict %s last access time %ld\n", (long) cur_ts, (char*)item, (long) last_ts);
 
             if (future_reuse_dist[last_ts] != -1 && future_reuse_dist[last_ts] < (gint64) cache_size) {
                 current_effective_size -= 1;
-                DEBUG("ts %lu last access %ld, size %ld %ld, reduce one %ld\n",
-                      cur_ts, future_reuse_dist[last_ts],
+                DEBUG("ts %ld last access %ld, size %ld %ld, reduce one %ld\n",
+                      (long) cur_ts, (long) future_reuse_dist[last_ts],
                       (long)cache->core->get_size(cache),
-                      (gint64) cache_size, current_effective_size);
+                      (long) (gint64) cache_size, (long) current_effective_size);
             }
             g_free(item);
         }

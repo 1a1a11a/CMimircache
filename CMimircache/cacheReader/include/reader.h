@@ -67,7 +67,7 @@ typedef struct break_point{
 
 struct cache_line{
     gpointer item_p;
-    char item[cache_line_label_size];
+    char item[CACHE_LINE_LABEL_SIZE];
     char type;                              /* type of content can be either guint64(l) or char*(c) */
     guint64 ts;                             /* deprecated, should not use, virtual timestamp */
     size_t size;

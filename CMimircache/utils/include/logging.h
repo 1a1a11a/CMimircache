@@ -24,6 +24,7 @@
 #define WARNING_LEVEL 4
 #define SEVERE_LEVEL  5
 
+#define LOGLEVEL DEBUG_LEVEL
 #ifndef LOGLEVEL
     #define LOGLEVEL INFO_LEVEL
 #endif // LOGLEVEL

@@ -24,8 +24,8 @@ static inline void csv_cb1(void *s, size_t len, void *data){
 
     if (params->current_column_counter == params->label_column){
         // this field is the request lable (key)
-        if (len >= cache_line_label_size)
-            len = cache_line_label_size - 1;
+        if (len >= CACHE_LINE_LABEL_SIZE)
+            len = CACHE_LINE_LABEL_SIZE - 1;
         strncpy(cp->item, (char*)s, len);
         cp->item[len] = 0;
         params->already_got_cache_line = TRUE;

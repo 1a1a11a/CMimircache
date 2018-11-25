@@ -18,8 +18,7 @@ extern "C" {
 #endif
 
 
-#define cache_line_label_size 128
-#define CACHE_LINE_LABEL_SIZE 128
+#define CACHE_LINE_LABEL_SIZE 1024*32
 #define FILE_LOC_STR_SIZE 1024
 
 #define KRESET  "\x1B[0m"
