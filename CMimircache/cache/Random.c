@@ -103,7 +103,7 @@ void Random_destroy_unique(struct_cache* cache){
 
 
 
-struct_cache* Random_init(guint64 size, char data_type, int block_size, void* params){
+struct_cache* Random_init(guint64 size, char data_type, guint64 block_size, void* params){
     struct_cache* cache = cache_init(size, data_type, block_size); 
     struct Random_params* Random_params = g_new0(struct Random_params, 1);
     cache->cache_params = (void*) Random_params;

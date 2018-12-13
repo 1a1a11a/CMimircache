@@ -56,11 +56,11 @@ extern void     ARC_destroy(struct_cache* cache);
 extern void     ARC_destroy_unique(struct_cache* cache);
 
 
-struct_cache*   ARC_init(guint64 size, char data_type, int block_size, void* params);
+struct_cache*   ARC_init(guint64 size, char data_type, guint64 block_size, void* params);
 
 
 extern void     ARC_remove_element(struct_cache* cache, void* data_to_remove);
-extern gint64 ARC_get_size(struct_cache* cache);
+extern guint64 ARC_get_size(struct_cache* cache);
 
 
 #ifdef __cplusplus

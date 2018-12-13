@@ -42,10 +42,10 @@ extern void*    __fifo__evict_with_return(struct_cache* fifo, cache_line* cp);
 
 extern void     fifo_destroy(struct_cache* cache);
 extern void     fifo_destroy_unique(struct_cache* cache);
-extern gint64 fifo_get_size(struct_cache *cache);
+extern guint64 fifo_get_size(struct_cache *cache);
 
 
-struct_cache* fifo_init(guint64 size, char data_type, int block_size, void* params);
+struct_cache* fifo_init(guint64 size, char data_type, guint64 block_size, void* params);
 
 
 #ifdef __cplusplus

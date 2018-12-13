@@ -126,7 +126,7 @@ void LRUPage_destroy_unique(struct_cache* cache){
 }
 
 
-struct_cache* LRUPage_init(guint64 size, char data_type, int block_size, void* params){
+struct_cache* LRUPage_init(guint64 size, char data_type, guint64 block_size, void* params){
     struct_cache *cache = cache_init(size, data_type, block_size);
     cache->cache_params = g_new0(struct LRUPage_params, 1);
     struct LRUPage_params* LRUPage_params = (struct LRUPage_params*)(cache->cache_params);
@@ -176,7 +176,7 @@ void LRUPage_remove_element(struct_cache* cache, void* data_to_remove){
     g_hash_table_remove(LRUPage_params->hashtable, data_to_remove);
 }
 
-gint64 LRUPage_get_size(struct_cache* cache){
+guint64 LRUPage_get_size(struct_cache* cache){
     struct LRUPage_params* LRUPage_params = (struct LRUPage_params*)(cache->cache_params);
     return (guint64) g_hash_table_size(LRUPage_params->hashtable);
 }

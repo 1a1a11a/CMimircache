@@ -158,18 +158,18 @@ gboolean LFU_add_element_with_size(struct_cache* cache, cache_line* cp){
     gint64 original_lbn = *(gint64*)(cp->item_p);
     gboolean ret_val;
     
-    if (cache->core->block_unit_size != 0 && cp->disk_sector_size != 0){
+    if (cache->core->block_size != 0 && cp->disk_sector_size != 0){
         *(gint64*)(cp->item_p) = (gint64) (*(gint64*)(cp->item_p) *
                                            cp->disk_sector_size /
-                                           cache->core->block_unit_size);
-        n = (int)ceil((double) cp->size/cache->core->block_unit_size);
+                                           cache->core->block_size);
+        n = (int)ceil((double) cp->size/cache->core->block_size);
     }
     
     ret_val = LFU_add_element(cache, cp);
     
     
-    if (cache->core->block_unit_size != 0 && cp->disk_sector_size != 0){
-        if (cache->core->block_unit_size != 0){
+    if (cache->core->block_size != 0 && cp->disk_sector_size != 0){
+        if (cache->core->block_size != 0){
             for (i=0; i<n-1; i++){
                 (*(guint64*)(cp->item_p)) ++;
                 LFU_add_element_only(cache, cp);
@@ -206,7 +206,7 @@ gboolean LFU_add_element_with_size(struct_cache* cache, cache_line* cp){
 
 
 
-struct_cache* LFU_init(guint64 size, char data_type, int block_size, void* params){
+struct_cache* LFU_init(guint64 size, char data_type, guint64 block_size, void* params){
     struct_cache* cache = cache_init(size, data_type, block_size);
     LFU_params_t* LFU_params = g_new0(LFU_params_t, 1);
     cache->cache_params = (void*) LFU_params;
@@ -253,7 +253,7 @@ struct_cache* LFU_init(guint64 size, char data_type, int block_size, void* param
 }
 
 
-gint64 LFU_get_size(struct_cache* cache){
+guint64 LFU_get_size(struct_cache* cache){
     LFU_params_t* LFU_params = (LFU_params_t*)(cache->cache_params);
     return (guint64) g_hash_table_size(LFU_params->hashtable);
 }

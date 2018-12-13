@@ -284,7 +284,7 @@ void hm_LRU_effective_size_thread(gpointer data, gpointer user_data) {
     gint64* future_reuse_dist = params->future_reuse_dist;
     cache_t* cache = params->cache->core->cache_init(cache_size,
                      params->cache->core->data_type,
-                     params->cache->core->block_unit_size,
+                     params->cache->core->block_size,
                      params->cache->core->cache_init_params);
 
     guint64 *effective_cache_size = malloc(sizeof(guint64) * reader_thread->base->total_num);

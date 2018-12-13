@@ -56,11 +56,11 @@ extern void     SLRUML_destroy(struct_cache* cache);
 extern void     SLRUML_destroy_unique(struct_cache* cache);
 
 
-struct_cache*   SLRUML_init(guint64 size, char data_type, int block_size, void* params);
+struct_cache*   SLRUML_init(guint64 size, char data_type, guint64 block_size, void* params);
 
 
 extern void     SLRUML_remove_element(struct_cache* cache, void* data_to_remove);
-extern gint64 SLRUML_get_size(struct_cache* cache);
+extern guint64 SLRUML_get_size(struct_cache* cache);
 
 extern void insert_at_segment(struct_cache* SLRUML, cache_line* cp, int segment); 
 

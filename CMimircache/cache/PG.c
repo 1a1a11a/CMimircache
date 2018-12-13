@@ -362,10 +362,10 @@ gboolean PG_add_element_withsize(struct_cache* cache, cache_line* cp){
     
     *(gint64*)(cp->item_p) = (gint64) (*(gint64*)(cp->item_p) *
                                        cp->disk_sector_size /
-                                       cache->core->block_unit_size);
+                                       cache->core->block_size);
     ret_val = PG_add_element(cache, cp);
     
-    int n = (int)ceil((double) cp->size/cache->core->block_unit_size);
+    int n = (int)ceil((double) cp->size/cache->core->block_size);
     
     for (i=0; i<n-1; i++){
         (*(guint64*)(cp->item_p)) ++;
@@ -422,7 +422,7 @@ void PG_destroy_unique(struct_cache* PG){
 
 
 
-struct_cache* PG_init(guint64 size, char data_type, int block_size, void* params){
+struct_cache* PG_init(guint64 size, char data_type, guint64 block_size, void* params){
     
     struct_cache *cache                 =       cache_init(size, data_type, block_size);
     cache->cache_params                 =       g_new0(PG_params_t, 1);
@@ -504,9 +504,9 @@ struct_cache* PG_init(guint64 size, char data_type, int block_size, void* params
 
 
 
-gint64 PG_get_size(struct_cache* cache){
+guint64 PG_get_size(struct_cache* cache){
     PG_params_t* PG_params = (PG_params_t*)(cache->cache_params);
-    return PG_params->cache->core->get_size(PG_params->cache);
+    return (guint64) PG_params->cache->core->get_size(PG_params->cache);
 }
 
 

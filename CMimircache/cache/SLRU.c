@@ -143,7 +143,7 @@ void SLRU_destroy_unique(struct_cache* cache){
 }
 
 
-struct_cache* SLRU_init(guint64 size, char data_type, int block_size, void* params){
+struct_cache* SLRU_init(guint64 size, char data_type, guint64 block_size, void* params){
     struct_cache *cache = cache_init(size, data_type, block_size);
     cache->cache_params = g_new0(struct SLRU_params, 1);
     SLRU_params_t* SLRU_params = (SLRU_params_t*)(cache->cache_params);
@@ -175,10 +175,10 @@ struct_cache* SLRU_init(guint64 size, char data_type, int block_size, void* para
 }
 
 
-gint64 SLRU_get_size(struct_cache* cache){
+guint64 SLRU_get_size(struct_cache* cache){
     SLRU_params_t* SLRU_params = (SLRU_params_t*)(cache->cache_params);
     int i;
-    uint64_t size = 0;
+    guint64 size = 0;
     for (i=0; i<SLRU_params->N_segments; i++)
         size += SLRU_params->current_sizes[i];
     return size;

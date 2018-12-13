@@ -951,11 +951,11 @@ extern "C"
     gboolean Mithril_add_element_withsize(struct_cache* Mithril, cache_line* cp){
         int i;
         gboolean ret_val;
-        if (Mithril->core->block_unit_size != 0 && cp->disk_sector_size != 0){
+        if (Mithril->core->block_size != 0 && cp->disk_sector_size != 0){
             
             *(gint64*)(cp->item_p) = (gint64) (*(gint64*)(cp->item_p) *
                                                cp->disk_sector_size /
-                                               Mithril->core->block_unit_size);
+                                               Mithril->core->block_size);
         }
         
         
@@ -1000,8 +1000,8 @@ extern "C"
         ret_val = Mithril_add_element(Mithril, cp);
         
         
-        if (Mithril->core->block_unit_size != 0 && cp->disk_sector_size != 0){
-            int n = (int)ceil((double) cp->size/Mithril->core->block_unit_size);
+        if (Mithril->core->block_size != 0 && cp->disk_sector_size != 0){
+            int n = (int)ceil((double) cp->size/Mithril->core->block_size);
             
             for (i=0; i<n-1; i++){
                 (*(guint64*)(cp->item_p)) ++;
@@ -1101,7 +1101,7 @@ extern "C"
     }
     
     
-    struct_cache* Mithril_init(guint64 size, char data_type, int block_size, void* params){
+    struct_cache* Mithril_init(guint64 size, char data_type, guint64 block_size, void* params){
 #ifdef SANITY_CHECK
         printf("SANITY_CHECK enabled\n");
 #endif
@@ -1536,10 +1536,10 @@ extern "C"
         
         ;
     }
-    
-    gint64 Mithril_get_size(struct_cache* cache){
+
+guint64 Mithril_get_size(struct_cache* cache){
         Mithril_params_t* Mithril_params = (Mithril_params_t*)(cache->cache_params);
-        return (gint64) Mithril_params->cache->core->get_size(Mithril_params->cache);
+        return (guint64) Mithril_params->cache->core->get_size(Mithril_params->cache);
     }
     
     

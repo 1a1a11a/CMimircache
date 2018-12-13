@@ -210,8 +210,8 @@ void SLRUML_destroy_unique(struct_cache* cache){
 }
 
 
-struct_cache* SLRUML_init(guint64 size, char data_type, int block_size, void* params){
-    struct_cache *cache = cache_init(size, block_size, data_type);
+struct_cache* SLRUML_init(guint64 size, char data_type, guint64 block_size, void* params){
+    struct_cache *cache = cache_init(size, data_type, block_size);
     cache->cache_params = g_new0(struct SLRUML_params, 1);
     SLRUML_params_t* SLRUML_params = (SLRUML_params_t*)(cache->cache_params);
     SLRUML_init_params_t* init_params = (SLRUML_init_params_t*) params;
@@ -294,10 +294,10 @@ struct_cache* SLRUML_init(guint64 size, char data_type, int block_size, void* pa
 }
 
 
-gint64 SLRUML_get_size(struct_cache* cache){
+guint64 SLRUML_get_size(struct_cache* cache){
     SLRUML_params_t* SLRUML_params = (SLRUML_params_t*)(cache->cache_params);
     int i;
-    uint64_t size = 0;
+    guint64 size = 0;
     for (i=0; i<SLRUML_params->N_segments; i++)
         size += SLRUML_params->current_sizes[i];
     return size;

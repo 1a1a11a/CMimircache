@@ -72,19 +72,19 @@ void cache_destroy_unique(struct_cache* cache){
 }
 
 
-struct_cache* cache_init(long long size, char data_type, int block_unit_size){
+struct_cache* cache_init(long long size, char data_type, guint64 block_size){
     struct_cache *cache = g_new0(struct_cache, 1);
     cache->core = g_new0(struct cache_core, 1);
     cache->core->size = size;
     cache->core->cache_init_params = NULL;
     cache->core->data_type = data_type;
-    if (block_unit_size != 0 && block_unit_size != -1){
+    if (block_size != 0 && block_size != -1){
         cache->core->consider_size = TRUE;
-        cache->core->block_unit_size = block_unit_size;
+        cache->core->block_size = block_size;
     }
     else {
         cache->core->consider_size = FALSE;
-        cache->core->block_unit_size = 0;
+        cache->core->block_size = 0;
     }
     return cache;
 }

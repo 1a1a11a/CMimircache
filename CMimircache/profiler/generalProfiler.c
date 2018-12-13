@@ -35,7 +35,7 @@ static void profiler_thread(gpointer data, gpointer user_data) {
 
     struct_cache* cache = params->cache->core->cache_init(bin_size * order,
                           params->cache->core->data_type,
-                          params->cache->core->block_unit_size,
+                          params->cache->core->block_size,
                           params->cache->core->cache_init_params);
     return_res_t** result = params->result;
 
@@ -45,7 +45,7 @@ static void profiler_thread(gpointer data, gpointer user_data) {
     // create cache line struct and initialization
     cache_line* cp = new_cacheline();
     cp->type = params->cache->core->data_type;
-    cp->block_unit_size = (size_t) reader_thread->base->block_unit_size;    // this is not used, block_unit_size goes with cache
+    cp->block_unit_size = (size_t) reader_thread->base->block_unit_size;    // this is not used, block_size goes with cache
     cp->disk_sector_size = (size_t) reader_thread->base->disk_sector_size;
 
 
@@ -153,7 +153,7 @@ static void get_eviction_age_thread(gpointer data, gpointer user_data) {
 
     struct_cache* cache = params->cache->core->cache_init(bin_size * order,
                           params->cache->core->data_type,
-                          params->cache->core->block_unit_size,
+                          params->cache->core->block_size,
                           params->cache->core->cache_init_params);
     return_res_t** result = params->result;
 
@@ -181,7 +181,7 @@ static void get_eviction_age_thread(gpointer data, gpointer user_data) {
     // create cache line struct and initialization
     cache_line* cp = new_cacheline();
     cp->type = params->cache->core->data_type;
-    cp->block_unit_size = (size_t) reader_thread->base->block_unit_size;    // this is not used, block_unit_size goes with cache
+    cp->block_unit_size = (size_t) reader_thread->base->block_unit_size;    // this is not used, block_size goes with cache
     cp->disk_sector_size = (size_t) reader_thread->base->disk_sector_size;
 
 
@@ -191,7 +191,7 @@ static void get_eviction_age_thread(gpointer data, gpointer user_data) {
     gboolean (*check_element)(struct cache*, cache_line * cp);
     gboolean (*add_element)(struct cache*, cache_line * cp);
     gpointer (*evict_element)(struct cache*, cache_line * cp);
-    gint64 (*get_size)(cache_t*);
+    guint64 (*get_size)(cache_t*);
     gpointer evicted_obj;
 
     insert_element = cache->core->__insert_element;
@@ -281,7 +281,7 @@ static void get_eviction_age_thread(gpointer data, gpointer user_data) {
 
         struct_cache* cache = params->cache->core->cache_init(bin_size * order,
                                                               params->cache->core->data_type,
-                                                              params->cache->core->block_unit_size,
+                                                              params->cache->core->block_size,
                                                               params->cache->core->cache_init_params);
         return_res_t** result = params->result;
 
@@ -292,7 +292,7 @@ static void get_eviction_age_thread(gpointer data, gpointer user_data) {
         // create cache line struct and initialization
         cache_line* cp = new_cacheline();
         cp->type = params->cache->core->data_type;
-        cp->block_unit_size = (size_t) reader_thread->base->block_unit_size;    // this is not used, block_unit_size goes with cache
+        cp->block_unit_size = (size_t) reader_thread->base->block_unit_size;    // this is not used, block_size goes with cache
         cp->disk_sector_size = (size_t) reader_thread->base->disk_sector_size;
 
 
@@ -358,7 +358,7 @@ static void get_eviction_age_thread(gpointer data, gpointer user_data) {
 
         struct_cache* cache = params->cache->core->cache_init(bin_size * order,
                                                               params->cache->core->data_type,
-                                                              params->cache->core->block_unit_size,
+                                                              params->cache->core->block_size,
                                                               params->cache->core->cache_init_params);
         return_res_t** result = params->result;
 
@@ -370,7 +370,7 @@ static void get_eviction_age_thread(gpointer data, gpointer user_data) {
         // create cache line struct and initialization
         cache_line* cp = new_cacheline();
         cp->type = params->cache->core->data_type;
-        cp->block_unit_size = (size_t) reader_thread->base->block_unit_size;    // this is not used, block_unit_size goes with cache
+        cp->block_unit_size = (size_t) reader_thread->base->block_unit_size;    // this is not used, block_size goes with cache
         cp->disk_sector_size = (size_t) reader_thread->base->disk_sector_size;
 
 
@@ -441,7 +441,7 @@ return_res_t** profiler(reader_t* reader_in,
     // initialization
     int num_of_threads = num_of_threads_in;
     int bin_size = bin_size_in;
-    long num_of_bins = ceil((double) cache_in->core->size / bin_size) + 1;
+    long num_of_bins = (long) ceil((double) cache_in->core->size / bin_size) + 1;
 
     if (reader_in->base->total_num == -1)
         get_num_of_req(reader_in);
@@ -449,10 +449,10 @@ return_res_t** profiler(reader_t* reader_in,
     // check whether profiling considering size or not
     if (cache_in->core->consider_size && reader_in->base->data_type == 'l'
             && reader_in->base->disk_sector_size != 0 &&
-            cache_in->core->block_unit_size != 0) {    // && cp->size != 0 is removed due to trace dirty
-        INFO("use block size %d, disk sector size %d in profiling\n",
-             cache_in->core->block_unit_size,
-             reader_in->base->disk_sector_size);
+            cache_in->core->block_size != 0) {    // && cp->size != 0 is removed due to trace dirty
+        INFO("use block size %lu, disk sector size %lu in profiling\n",
+             (unsigned long) cache_in->core->block_size,
+             (unsigned long) reader_in->base->disk_sector_size);
     }
 
 
@@ -560,7 +560,7 @@ static void traverse_trace(reader_t* reader, struct_cache* cache) {
 //    // create cache lize struct and initialization
 //    cache_line* cp = new_cacheline();
 //    cp->type = cache->core->data_type;
-//    cp->block_unit_size = (size_t) reader->base->block_unit_size;
+//    cp->block_size = (size_t) reader->base->block_size;
 //
 //    gboolean (*add_element)(struct cache*, cache_line* cp);
 //    add_element = cache->core->add_element;

@@ -137,7 +137,7 @@ void* __optimal_evict_with_return(struct_cache* optimal, cache_line* cp){
 }
 
 
-gint64 optimal_get_size(struct_cache* cache){
+guint64 optimal_get_size(struct_cache* cache){
     optimal_params_t* optimal_params = (optimal_params_t*)(cache->cache_params);
     return (guint64) g_hash_table_size(optimal_params->hashtable);
 }
@@ -190,16 +190,16 @@ gboolean optimal_add_element_withsize(struct_cache* cache, cache_line* cp){
     gint64 original_lbn = *(gint64*)(cp->item_p);
     gboolean ret_val;
 
-    if (cache->core->block_unit_size != 0){
+    if (cache->core->block_size != 0){
         *(gint64*)(cp->item_p) = (gint64) (*(gint64*)(cp->item_p) *
                                            cp->disk_sector_size /
-                                           cache->core->block_unit_size);
-        n = (int)ceil((double) cp->size/cache->core->block_unit_size);
+                                           cache->core->block_size);
+        n = (int)ceil((double) cp->size/cache->core->block_size);
     }
     ret_val = optimal_add_element(cache, cp);
 
 
-    if (cache->core->block_unit_size != 0){
+    if (cache->core->block_size != 0){
         for (i=0; i<n-1; i++){
             (*(guint64*)(cp->item_p)) ++;
             optimal_add_element_only(cache, cp);
@@ -259,7 +259,7 @@ gboolean optimal_add_element_only(struct_cache* cache, cache_line* cp){
 
 
 
-struct_cache* optimal_init(guint64 size, char data_type, int block_size, void* params){
+struct_cache* optimal_init(guint64 size, char data_type, guint64 block_size, void* params){
     struct_cache* cache = cache_init(size, data_type, block_size);
 
     optimal_params_t* optimal_params = g_new0(optimal_params_t, 1);

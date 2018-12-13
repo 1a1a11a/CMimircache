@@ -56,7 +56,7 @@ extern  void LRU_K_destroy(struct_cache* cache);
 extern  void LRU_K_destroy_unique(struct_cache* cache);
 
 
-struct_cache* LRU_K_init(guint64 size, char data_type, int block_size, void* params);
+struct_cache* LRU_K_init(guint64 size, char data_type, guint64 block_size, void* params);
 
 
 #ifdef __cplusplus

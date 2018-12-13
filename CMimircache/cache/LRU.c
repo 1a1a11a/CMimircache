@@ -191,10 +191,10 @@ gboolean LRU_add_element_withsize(struct_cache* cache, cache_line* cp){
     
     *(gint64*)(cp->item_p) = (gint64) (*(gint64*)(cp->item_p) *
                                        cp->disk_sector_size /
-                                       cache->core->block_unit_size);
+                                       cache->core->block_size);
     ret_val = LRU_add_element(cache, cp);
     
-    int n = (int)ceil((double) cp->size/cache->core->block_unit_size);
+    int n = (int)ceil((double) cp->size/cache->core->block_size);
     
     for (i=0; i<n-1; i++){
         (*(guint64*)(cp->item_p)) ++;
@@ -248,7 +248,7 @@ void LRU_destroy_unique(struct_cache* cache){
  *
  *-----------------------------------------------------------------------------
  */
-struct_cache* LRU_init(guint64 size, char data_type, int block_size, void* params){
+struct_cache* LRU_init(guint64 size, char data_type, guint64 block_size, void* params){
     struct_cache *cache = cache_init(size, data_type, block_size);
     cache->cache_params = g_new0(struct LRU_params, 1);
     struct LRU_params* LRU_params = (struct LRU_params*)(cache->cache_params);
@@ -302,7 +302,7 @@ void LRU_remove_element(struct_cache* cache, void* data_to_remove){
     g_hash_table_remove(LRU_params->hashtable, data_to_remove);
 }
 
-gint64 LRU_get_size(struct_cache* cache){
+guint64 LRU_get_size(struct_cache* cache){
     struct LRU_params* LRU_params = (struct LRU_params*)(cache->cache_params);
     return (guint64) g_hash_table_size(LRU_params->hashtable);
 }

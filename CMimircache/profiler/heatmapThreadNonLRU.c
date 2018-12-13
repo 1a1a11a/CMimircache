@@ -32,7 +32,7 @@ extern "C"
         draw_dict* dd = params->dd;
         struct cache* cache = params->cache->core->cache_init(params->cache->core->size,
                                                               params->cache->core->data_type,
-                                                              params->cache->core->block_unit_size,
+                                                              params->cache->core->block_size,
                                                               params->cache->core->cache_init_params);
         
         guint64 order = GPOINTER_TO_INT(data)-1;
@@ -123,7 +123,7 @@ extern "C"
         else {
             cache = params->cache->core->cache_init(cache_size,
                                                     params->cache->core->data_type,
-                                                    params->cache->core->block_unit_size,
+                                                    params->cache->core->block_size,
                                                     params->cache->core->cache_init_params);
             
             double ewma_coefficient_lf = params->ewma_coefficient_lf;
@@ -189,7 +189,7 @@ extern "C"
 
         cache_t* cache = params->cache->core->cache_init((unsigned long) cache_size,
                                                          params->cache->core->data_type,
-                                                         params->cache->core->block_unit_size,
+                                                         params->cache->core->block_size,
                                                          params->cache->core->cache_init_params);
         
         guint64 *effective_cache_size = malloc(sizeof(guint64) * reader_thread->base->total_num);

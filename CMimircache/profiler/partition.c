@@ -67,7 +67,7 @@ partition_t* get_partition(reader_t* reader, struct cache* cache, uint8_t n_part
     void      (*insert_element)(struct cache*, cache_line*)     =   cache->core->__insert_element;
     void      (*update_element)(struct cache*, cache_line*)     =   cache->core->__update_element;
     gpointer  (*evict_with_return)(struct cache*, cache_line*)  =   cache->core->__evict_with_return;
-    gint64    (*get_size)      (struct cache*)                  =   cache->core->get_size;
+    guint64    (*get_size)      (struct cache*)                  =   cache->core->get_size;
 
 
     char* key;
@@ -214,7 +214,7 @@ static void profiler_partition_thread(gpointer data, gpointer user_data){
         cache[i] = params->cache->core->cache_init(
                             (long)(g_array_index(partition->partition_history[i], double, 0) * bin_size * order),
                             params->cache->core->data_type,
-                            params->cache->core->block_unit_size,
+                            params->cache->core->block_size,
                             params->cache->core->cache_init_params);
     }
 

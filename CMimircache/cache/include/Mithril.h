@@ -192,7 +192,7 @@ extern "C"
         /** size of block
          *  this should be equal to block_unit_size in cache->core
          **/
-        gint block_size;
+        guint64 block_size;
         
         /* the maximum allocated metadata size */
         gdouble max_metadata_size;
@@ -490,7 +490,7 @@ extern "C"
      */
     struct_cache*   Mithril_init(guint64 size,
                                  char data_type,
-                                 int block_size,
+                                 guint64 block_size,
                                  void* params);
     
     
@@ -505,7 +505,7 @@ extern "C"
      @param cache cache struct
      @return current size
      */
-    extern gint64 Mithril_get_size(struct_cache* cache);
+    extern guint64 Mithril_get_size(struct_cache* cache);
     
     
 #ifdef __cplusplus

@@ -22,8 +22,16 @@ extern "C"
 struct LRUSize_params{
     GHashTable *hashtable;
     GQueue *list;
-    gint64 ts;              // this only works when add_element is called 
+    gint64 ts;              // this only works when add_element is called
 };
+
+typedef struct cache_obj{
+    gpointer key;
+//    char key[CACHE_LINE_LABEL_SIZE];
+//    void *content;
+    guint64 size;
+}cache_obj_t;
+
 
 typedef struct LRUSize_params LRUSize_params_t; 
 
@@ -44,11 +52,11 @@ extern void     LRUSize_destroy(struct_cache* cache);
 extern void     LRUSize_destroy_unique(struct_cache* cache);
 
 
-struct_cache*   LRUSize_init(guint64 size, char data_type, int block_size, void* params);
+struct_cache*   LRUSize_init(guint64 size, char data_type, guint64 block_size, void* params);
 
 
 extern void     LRUSize_remove_element(struct_cache* cache, void* data_to_remove);
-extern gint64 LRUSize_get_size(struct_cache* cache);
+extern guint64   LRUSize_get_size(struct_cache* cache);
 
 
 #ifdef __cplusplus

@@ -228,7 +228,7 @@ void ARC_destroy_unique(struct_cache* cache){
 }
 
 
-struct_cache* ARC_init(guint64 size, char data_type, int block_size, void* params){
+struct_cache* ARC_init(guint64 size, char data_type, guint64 block_size, void* params){
     struct_cache *cache = cache_init(size, data_type, block_size);
     cache->cache_params = g_new0(struct ARC_params, 1);
     ARC_params_t* ARC_params = (ARC_params_t*)(cache->cache_params);
@@ -263,9 +263,9 @@ struct_cache* ARC_init(guint64 size, char data_type, int block_size, void* param
 
 
 
-gint64 ARC_get_size(struct_cache* cache){
+guint64 ARC_get_size(struct_cache* cache){
     ARC_params_t* ARC_params = (ARC_params_t*)(cache->cache_params);
-    return (uint64_t)(ARC_params->size1 + ARC_params->size2);
+    return (guint64)(ARC_params->size1 + ARC_params->size2);
 }
 
 

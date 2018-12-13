@@ -420,11 +420,11 @@ gboolean AMP_add_element_no_eviction_withsize(struct_cache* cache, cache_line* c
     struct AMP_params* AMP_params = (struct AMP_params*)(cache->cache_params);
     gint64 block, i, n = 1;
     
-    if (cp->disk_sector_size != 0 && cache->core->block_unit_size !=0){
+    if (cp->disk_sector_size != 0 && cache->core->block_size !=0){
         *(gint64*)(cp->item_p) = (gint64) (*(gint64*)(cp->item_p) *
                                            cp->disk_sector_size /
-                                           cache->core->block_unit_size);
-        n = (int)ceil((double)cp->size/cache->core->block_unit_size);
+                                           cache->core->block_size);
+        n = (int)ceil((double)cp->size/cache->core->block_size);
         if (n<1)    // some traces have size zero for some requests
             n = 1;
     }
@@ -447,7 +447,7 @@ gboolean AMP_add_element_no_eviction_withsize(struct_cache* cache, cache_line* c
         page->accessed = 1;
 
         // new for withsize, keep reading the remaining pages
-        if (cp->disk_sector_size != 0 && cache->core->block_unit_size !=0){
+        if (cp->disk_sector_size != 0 && cache->core->block_size !=0){
             gint64 old_block = (*(gint64*)(cp->item_p));
             for (i=0; i<n-1; i++){
                 (*(gint64*)(cp->item_p)) ++;
@@ -497,7 +497,7 @@ gboolean AMP_add_element_no_eviction_withsize(struct_cache* cache, cache_line* c
         
         
         // new for withsize, keep reading the remaining pages
-        if (cp->disk_sector_size != 0 && cache->core->block_unit_size != 0){
+        if (cp->disk_sector_size != 0 && cache->core->block_size != 0){
 
             gint64 last_block = (*(gint64*)(cp->item_p)) + n -1;
             // update new last_block_number
@@ -558,7 +558,7 @@ gboolean AMP_add_element_no_eviction_withsize(struct_cache* cache, cache_line* c
                 check = check && AMP_lookup(cache, block-m);
             if (check){
                 // new 170505, for calculating precision
-//                if (cp->disk_sector_size != 0 && cache->core->block_unit_size != 0){
+//                if (cp->disk_sector_size != 0 && cache->core->block_size != 0){
 //                    block = (*(gint64*)(cp->item_p)) + n -1;
 //                    length -= (long)(n - 1);
 //                }
@@ -639,7 +639,7 @@ void AMP_destroy_unique(struct_cache* cache){
 }
 
 
-struct_cache* AMP_init(guint64 size, char data_type, int block_size, void* params){
+struct_cache* AMP_init(guint64 size, char data_type, guint64 block_size, void* params){
     struct_cache *cache = cache_init(size, data_type, block_size);
     cache->cache_params = g_new0(struct AMP_params, 1);
     struct AMP_params* AMP_params = (struct AMP_params*)(cache->cache_params);
@@ -685,7 +685,7 @@ struct_cache* AMP_init(guint64 size, char data_type, int block_size, void* param
 
 
 
-gint64 AMP_get_size(struct_cache* cache){
+guint64 AMP_get_size(struct_cache* cache){
     struct AMP_params* AMP_params = (struct AMP_params*)(cache->cache_params);
     return (guint64) g_hash_table_size(AMP_params->hashtable);
 }

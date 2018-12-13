@@ -140,7 +140,7 @@ void* __Score_evict_with_return(struct_cache* Score, cache_line* cp){
 }
 
 
-gint64 Score_get_size(struct_cache* cache){
+guint64 Score_get_size(struct_cache* cache){
     Score_params_t* Score_params = (Score_params_t*)(cache->cache_params);
     return (guint64) g_hash_table_size(Score_params->hashtable);
 }
@@ -205,7 +205,7 @@ void Score_destroy_unique(struct_cache* cache){
 
 
 
-struct_cache* Score_init(guint64 size, char data_type, int block_size,  void* params){
+struct_cache* Score_init(guint64 size, char data_type, guint64 block_size,  void* params){
     struct_cache* cache = cache_init(size, data_type, block_size);
     
     Score_params_t* Score_params = g_new0(Score_params_t, 1);
