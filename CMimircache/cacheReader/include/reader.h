@@ -111,7 +111,7 @@ typedef struct reader_base{
     size_t file_size;
     void* init_params;
 
-    void* mapped_file;                      /* mmap the file, this should not change during runtime
+    char* mapped_file;                      /* mmap the file, this should not change during runtime
                                              * offset in the file is changed using offset */
     guint64 offset;
     size_t record_size;                     /* the size of one record, used to

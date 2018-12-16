@@ -146,7 +146,7 @@ void read_one_element(reader_t *const reader, cache_line_t *const c){
             find_line_ending(reader, &line_end, &line_len);
             strncpy(c->item, reader->base->mapped_file+reader->base->offset, line_len);
             c->item[line_len] = 0;
-            reader->base->offset = (void*)line_end - reader->base->mapped_file;
+            reader->base->offset = (char*)line_end - reader->base->mapped_file;
             break;
         case VSCSI:
             vscsi_read(reader, c);
@@ -191,7 +191,7 @@ int go_back_one_line(reader_t *const reader){
                 // find current line ending
                 while (*cp == FILE_LF || *cp == FILE_CR){
                     cp--;
-                    if ((void*)cp < reader->base->mapped_file)
+                    if ((char*)cp < reader->base->mapped_file)
                         return 1;
                 }
             }
@@ -199,19 +199,19 @@ int go_back_one_line(reader_t *const reader){
              *  or points to somewhere after the beginning of current line beginning
              *  find the first character of current line
              */
-            while ( (void*)cp > reader->base->mapped_file &&
+            while ( (char*)cp > reader->base->mapped_file &&
                    *cp != FILE_LF && *cp != FILE_CR){
                 cp--;
             }
             if ((void*)cp != reader->base->mapped_file)
                 cp ++; // jump over LFCR
 
-            if ((void*)cp < reader->base->mapped_file){
+            if ((char*)cp < reader->base->mapped_file){
                 ERROR("current pointer points before mapped file\n");
                 exit(1);
             }
             // now cp points to the pos after LFCR before the line that should be read
-            reader->base->offset = (void*)cp - reader->base->mapped_file;
+            reader->base->offset = (char*)cp - reader->base->mapped_file;
 
             return 0;
 
@@ -300,7 +300,7 @@ guint64 skip_N_elements(reader_t *const reader, const guint64 N){
             long line_len;
             for (i=0; i<N; i++){
                 end = find_line_ending(reader, &line_end, &line_len);
-                reader->base->offset = (void*)line_end - reader->base->mapped_file;
+                reader->base->offset = (char*)line_end - reader->base->mapped_file;
                 if (end) {
                     if (reader->base->type == 'c'){
                         csv_params_t *params = reader->reader_params;
@@ -390,7 +390,7 @@ guint64 get_num_of_req(reader_t *const reader){
             char *line_end = NULL;
             long line_len;
             while (!find_line_ending(reader, &line_end, &line_len)){
-                reader->base->offset = (void*)line_end - reader->base->mapped_file;
+                reader->base->offset = (char*)line_end - reader->base->mapped_file;
                 n_req ++;
             }
             n_req++;

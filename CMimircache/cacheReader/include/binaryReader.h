@@ -53,9 +53,16 @@ typedef struct{
 }binary_params_t;
 
 
+binary_init_params_t* new_binaryReader_init_params(gint label_pos,
+                                                   gint op_pos,
+                                                   gint real_time_pos,
+                                                   gint size_pos,
+                                                   const char *fmt);
+
+
 
 /* binary extract extracts the attribute from record, at given pos */
-static inline void binary_extract(void* record, int pos, int len,
+static inline void binary_extract(char* record, int pos, int len,
                                   char type, void* written_to){
     
     ;
@@ -121,9 +128,9 @@ static inline int binary_read(reader_t* reader, cache_line* cp){
         return 0;
     }
     
-    binary_params_t *params = reader->reader_params;
+    binary_params_t *params = (binary_params_t *) reader->reader_params;
     
-    void *record = (reader->base->mapped_file + reader->base->offset);
+    char *record = (reader->base->mapped_file + reader->base->offset);
     if (params->label_type){
         binary_extract(record, params->label_pos, params->label_len,
                        params->label_type, cp->item_p);

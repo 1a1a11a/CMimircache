@@ -116,7 +116,7 @@ gpointer __LRUSize__evict_with_return(struct_cache *cache, cache_line *cp) {
 gboolean LRUSize_add_element(struct_cache *cache, cache_line *cp) {
     struct LRUSize_params *LRUSize_params = (struct LRUSize_params *) (cache->cache_params);
     if (cp->size == 0) {
-        ERROR("LRUSize get size zero\n");
+        ERROR("LRUSize get size zero for request\n");
         abort();
     }
 

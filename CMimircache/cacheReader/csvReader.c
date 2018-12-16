@@ -81,7 +81,6 @@ csvReader_init_params* new_csvReader_init_params(gint label_column,
 }
 
 
-
 void csv_setup_Reader(const char *const file_loc,
                       reader_t *const reader,
                       const csvReader_init_params *const init_params){
@@ -125,7 +124,7 @@ void csv_setup_Reader(const char *const file_loc,
         char *line_end = NULL;
         long line_len = 0;
         find_line_ending(reader, &line_end, &line_len);
-        reader->base->offset = (void*) line_end - reader->base->mapped_file;
+        reader->base->offset = (char*) line_end - reader->base->mapped_file;
         params->has_header = init_params->has_header;
     }
 }
@@ -153,7 +152,7 @@ void csv_read_one_element(reader_t *const reader, cache_line *const c){
         WARNING("in parsing csv file: %s\n",
               csv_strerror(csv_error(params->csv_parser)));
 
-    reader->base->offset = (void*)line_end - reader->base->mapped_file;
+    reader->base->offset = (char*)line_end - reader->base->mapped_file;
     
     if (end)
         params->reader_end = TRUE;
@@ -202,7 +201,7 @@ void csv_reset_reader(reader_t* reader){
         char *line_end = NULL;
         long line_len = 0;
         find_line_ending(reader, &line_end, &line_len);
-        reader->base->offset = (void*) line_end - reader->base->mapped_file;
+        reader->base->offset = (char*) line_end - reader->base->mapped_file;
     }
     params->reader_end = FALSE;    
 }
