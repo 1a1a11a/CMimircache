@@ -54,8 +54,8 @@ void __LRUSize_update_element(struct_cache *cache, cache_line *cp) {
 
     cache_obj_t *cache_obj = node->data;
     if (cache->core->occupied_size < ((cache_obj_t *) (node->data))->size) {
-        ERROR("occupied cache size %lu smaller than object size %lu\n",
-              (unsigned long) cache->core->occupied_size, (unsigned long) ((cache_obj_t *) (node->data))->size);
+        ERROR("occupied cache size %llu smaller than object size %llu\n",
+              (unsigned long long) cache->core->occupied_size, (unsigned long long) ((cache_obj_t *) (node->data))->size);
         abort();
     }
     cache->core->occupied_size -= cache_obj->size;
@@ -73,8 +73,8 @@ void __LRUSize_evict_element(struct_cache *cache, cache_line *cp) {
     cache_obj_t *cache_obj = (cache_obj_t *) g_queue_pop_head(LRUSize_params->list);
 
     if (cache->core->occupied_size < cache_obj->size) {
-        ERROR("occupied cache size %lu smaller than object size %lu\n",
-              (unsigned long) cache->core->occupied_size, (unsigned long) cache_obj->size);
+        ERROR("occupied cache size %llu smaller than object size %llu\n",
+              (unsigned long long) cache->core->occupied_size, (unsigned long long) cache_obj->size);
         abort();
     }
     cache->core->occupied_size -= cache_obj->size;
@@ -84,16 +84,16 @@ void __LRUSize_evict_element(struct_cache *cache, cache_line *cp) {
 
 
 gpointer __LRUSize__evict_with_return(struct_cache *cache, cache_line *cp) {
-    /** evict one element and return the evicted element, 
-     * needs to free the memory of returned data 
+    /** evict one element and return the evicted element,
+     * needs to free the memory of returned data
      */
 
     struct LRUSize_params *LRUSize_params = (struct LRUSize_params *) (cache->cache_params);
 
     cache_obj_t *cache_obj = g_queue_pop_head(LRUSize_params->list);
     if (cache->core->occupied_size < cache_obj->size) {
-        ERROR("occupied cache size %lu smaller than object size %lu\n",
-              (unsigned long) cache->core->occupied_size, (unsigned long) cache_obj->size);
+        ERROR("occupied cache size %llu smaller than object size %llu\n",
+              (unsigned long long) cache->core->occupied_size, (unsigned long long) cache_obj->size);
         abort();
     }
 
@@ -199,9 +199,9 @@ void LRUSize_remove_element(struct_cache *cache, void *data_to_remove) {
         abort();
     }
     if (cache->core->occupied_size < ((cache_obj_t *) (node->data))->size) {
-        ERROR("occupied cache size %lu smaller than object size %lu\n",
-              (unsigned long) cache->core->occupied_size,
-              (unsigned long) ((cache_obj_t *) (node->data))->size);
+        ERROR("occupied cache size %llu smaller than object size %llu\n",
+              (unsigned long long) cache->core->occupied_size,
+              (unsigned long long) ((cache_obj_t *) (node->data))->size);
         abort();
     }
 
