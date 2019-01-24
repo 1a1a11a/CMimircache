@@ -70,7 +70,7 @@ struct cache_line{
     char item[CACHE_LINE_LABEL_SIZE];
     char type;                              /* type of content can be either guint64(l) or char*(c) */
     guint64 ts;                             /* deprecated, should not use, virtual timestamp */
-    size_t size;
+    guint64 size;
     size_t block_unit_size;
     size_t disk_sector_size;
     int op;
