@@ -234,7 +234,7 @@ static void profiler_partition_thread(gpointer data, gpointer user_data){
     void      (*update_element)(struct cache*, cache_line*)     =   cache[0]->core->__update_element;
     void      (*evict_element) (struct cache*, cache_line*)     =   cache[0]->core->__evict_element;
 //    gpointer  (*evict_with_return)(struct cache*, cache_line*)  =   cache[0]->core->__evict_with_return;
-    gint64    (*get_size)      (struct cache*)                  =   cache[0]->core->get_size;
+    guint64    (*get_size)      (struct cache*)                  =   cache[0]->core->get_size;
 
     read_one_element(reader_thread, cp);
 
