@@ -213,10 +213,13 @@ void set_no_eof(reader_t *const reader);
 
 
 cache_line_t* new_cacheline(void);
+request_t* new_req_struct(void);
 
 cache_line_t *copy_cache_line(cache_line_t *cp);
+request_t *copy_req(request_t *req);
 
 void destroy_cacheline(cache_line_t* cp);
+void destroy_req_struct(request_t* req);
 
 
 

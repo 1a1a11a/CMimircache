@@ -18,8 +18,6 @@ extern "C"
 {
 #endif
 
-void cacheobj_destroyer(gpointer data);
-
 
 void __LRUSize_insert_element(struct_cache *cache, cache_line *cp) {
     struct LRUSize_params *LRUSize_params = (struct LRUSize_params *) (cache->cache_params);
@@ -139,9 +137,9 @@ void LRUSize_destroy(struct_cache *cache) {
     struct LRUSize_params *LRUSize_params = (struct LRUSize_params *) (cache->cache_params);
 
     g_hash_table_destroy(LRUSize_params->hashtable);
-    g_queue_free(LRUSize_params->list);
-//    g_queue_free_full(LRUSize_params->list, simple_g_key_value_destroyer);
-    cache_destroy(cache);
+//    g_queue_free(LRUSize_params->list);
+    g_queue_free_full(LRUSize_params->list, simple_g_key_value_destroyer);
+//    cache_destroy(cache);
 }
 
 void LRUSize_destroy_unique(struct_cache *cache) {
@@ -173,6 +171,7 @@ struct_cache *LRUSize_init(guint64 size, char data_type, guint64 block_size, voi
     cache->core->__evict_element = __LRUSize_evict_element;
     cache->core->__evict_with_return = __LRUSize__evict_with_return;
     cache->core->get_size = LRUSize_get_size;
+    cache->core->get_objmap = LRUSize_get_objmap;
     cache->core->remove_element = LRUSize_remove_element;
     cache->core->cache_init_params = NULL;
 
@@ -214,12 +213,11 @@ guint64 LRUSize_get_size(struct_cache *cache) {
     return (guint64) cache->core->occupied_size;
 }
 
-
-void cacheobj_destroyer(gpointer data) {
-    GList* node = data;
-    cache_obj_t* cache_obj = node->data;
-    g_free(cache_obj);
+GHashTable* LRUSize_get_objmap(struct_cache *cache){
+    struct LRUSize_params *LRUSize_params = (struct LRUSize_params *) (cache->cache_params);
+    return LRUSize_params->hashtable;
 }
+
 
 
 

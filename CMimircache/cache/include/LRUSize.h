@@ -25,13 +25,6 @@ struct LRUSize_params{
     gint64 ts;              // this only works when add_element is called
 };
 
-typedef struct cache_obj{
-    gpointer key;
-//    char key[CACHE_LINE_LABEL_SIZE];
-//    void *content;
-    guint64 size;
-}cache_obj_t;
-
 
 typedef struct LRUSize_params LRUSize_params_t; 
 
@@ -57,6 +50,7 @@ struct_cache*   LRUSize_init(guint64 size, char data_type, guint64 block_size, v
 
 extern void     LRUSize_remove_element(struct_cache* cache, void* data_to_remove);
 extern guint64   LRUSize_get_size(struct_cache* cache);
+extern GHashTable* LRUSize_get_objmap();
 
 
 #ifdef __cplusplus

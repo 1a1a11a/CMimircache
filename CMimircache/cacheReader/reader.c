@@ -625,6 +625,7 @@ guint64 read_one_request_size(reader_t *const reader){
     return 0;
 }
 
+
 cache_line_t* new_cacheline(){
     cache_line* cp = g_new0(cache_line, 1);
     cp->op = -1;
@@ -654,6 +655,18 @@ void destroy_cacheline(cache_line_t* cp){
     g_free(cp);
 }
 
+
+request_t* new_req_struct(){
+  return new_cacheline();
+}
+
+request_t* copy_req(request_t* req){
+  return copy_cache_line(req);
+}
+
+void destroy_req_struct(request_t *req){
+  destroy_cacheline(req);
+}
 
 #ifdef __cplusplus
 }
