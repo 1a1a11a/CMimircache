@@ -46,7 +46,13 @@ gboolean FIFOSize_check_element(struct_cache *cache, cache_line *cp) {
 
 
 void __FIFOSize_update_element(struct_cache *cache, cache_line *cp) {
-    ;
+    struct FIFOSize_params *FIFOSize_params = (struct FIFOSize_params *) (cache->cache_params);
+    GList *node = (GList *) g_hash_table_lookup(FIFOSize_params->hashtable, cp->item_p);
+
+    cache_obj_t *cache_obj = node->data;
+    if (cache_obj->size != cp->size){
+        ERROR("updating in FIFO is impossible, it will only result in a new entry");
+    }
 }
 
 
