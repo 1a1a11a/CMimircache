@@ -72,7 +72,7 @@ static inline void binary_extract(char* record, int pos, int len,
         case 'B':
         case 'c':
         case '?':
-            WARNING("given type %c cannot be used for label or time\n", type);
+            WARNING("given label_type %c cannot be used for label or time\n", type);
             break;
             
         case 'h':
@@ -122,7 +122,7 @@ static inline void binary_extract(char* record, int pos, int len,
 
 
 
-static inline int binary_read(reader_t* reader, cache_line* cp){
+static inline int binary_read(reader_t* reader, request_t* cp){
     if (reader->base->offset >= reader->base->total_num * reader->base->record_size){
         cp->valid = FALSE;
         return 0;
@@ -133,7 +133,7 @@ static inline int binary_read(reader_t* reader, cache_line* cp){
     char *record = (reader->base->mapped_file + reader->base->offset);
     if (params->label_type){
         binary_extract(record, params->label_pos, params->label_len,
-                       params->label_type, cp->item_p);
+                       params->label_type, cp->label_ptr);
     }
     if (params->real_time_type){
         binary_extract(record, params->real_time_pos, params->real_time_len,
@@ -144,7 +144,7 @@ static inline int binary_read(reader_t* reader, cache_line* cp){
                        params->size_type, &(cp->size));
     }
     if (params->op_type){
-//        printf("op type %d %c\n", params->op_type, params->op_type);
+//        printf("op label_type %d %c\n", params->op_type, params->op_type);
 //        WARNING("currently op option is not supported\n");
 //        binary_extract(record, params->op_pos, params->op_len,
 //                       params->op_type, &(cp->op));

@@ -24,7 +24,7 @@ extern "C"
     double get_log_base(guint64 max, guint64 expect_result);
 
     GSList* get_last_access_dist_seq(reader_t* reader,
-                                     void (*funcPtr)(reader_t*, cache_line*));
+                                     void (*funcPtr)(reader_t*, request_t*));
 
     GArray* get_bp_vtime(reader_t* reader,
                          gint64 time_interval,

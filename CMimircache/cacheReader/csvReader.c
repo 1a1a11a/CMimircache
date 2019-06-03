@@ -20,14 +20,14 @@ static inline void csv_cb1(void *s, size_t len, void *data){
 
     reader_t* reader = (reader_t*)data;
     csv_params_t *params = reader->reader_params;
-    cache_line* cp = params->cache_line_pointer;
+    request_t* cp = params->cache_line_pointer;
 
     if (params->current_column_counter == params->label_column){
         // this field is the request lable (key)
-        if (len >= CACHE_LINE_LABEL_SIZE)
-            len = CACHE_LINE_LABEL_SIZE - 1;
-        strncpy(cp->item, (char*)s, len);
-        cp->item[len] = 0;
+        if (len >= REQ_LABEL_MAX_LEN)
+            len = REQ_LABEL_MAX_LEN - 1;
+        strncpy(cp->label, (char*)s, len);
+        cp->label[len] = 0;
         params->already_got_cache_line = TRUE;
     }
     else if (params->current_column_counter == params->real_time_column){
@@ -104,7 +104,7 @@ void csv_setup_Reader(const char *const file_loc,
         exit(1);
     }
 
-    reader->base->type = 'c';         /* csv  */
+    reader->base->trace_type = 'c';         /* csv  */
     params->current_column_counter = 1;
     params->op_column = init_params->op_column;
     params->real_time_column = init_params->real_time_column;
@@ -130,7 +130,7 @@ void csv_setup_Reader(const char *const file_loc,
 }
 
 
-void csv_read_one_element(reader_t *const reader, cache_line *const c){
+void csv_read_one_element(reader_t *const reader, request_t *const c){
     csv_params_t *params = reader->reader_params;
 
     params->cache_line_pointer = c;
@@ -157,7 +157,7 @@ void csv_read_one_element(reader_t *const reader, cache_line *const c){
     if (end)
         params->reader_end = TRUE;
 
-    if (!params->already_got_cache_line){       // didn't read in trace item
+    if (!params->already_got_cache_line){       // didn't read in trace label
         if (params->reader_end)
             csv_fini(params->csv_parser, csv_cb1, csv_cb2, reader);
         else{

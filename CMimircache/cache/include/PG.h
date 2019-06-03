@@ -37,7 +37,7 @@ extern "C"
 
 
 typedef struct{
-    struct_cache    *cache;
+    cache_t    *cache;
     
     GHashTable      *graph;                  // key -> graphNode_t 
 
@@ -76,25 +76,25 @@ typedef struct{
 
 
 
-extern gboolean PG_check_element(struct_cache* cache, cache_line* cp);
-extern gboolean PG_add_element(struct_cache* cache, cache_line* cp);
+extern gboolean PG_check_element(cache_t* cache, request_t* cp);
+extern gboolean PG_add_element(cache_t* cache, request_t* cp);
 
 
-extern void     __PG_insert_element(struct_cache* PG, cache_line* cp);
-extern void     __PG_update_element(struct_cache* PG, cache_line* cp);
-extern void     __PG_evict_element(struct_cache* PG, cache_line* cp);
-extern void*    __PG_evict_with_return(struct_cache* PG, cache_line* cp);
+extern void     __PG_insert_element(cache_t* PG, request_t* cp);
+extern void     __PG_update_element(cache_t* PG, request_t* cp);
+extern void     __PG_evict_element(cache_t* PG, request_t* cp);
+extern void*    __PG_evict_with_return(cache_t* PG, request_t* cp);
 
 
-extern void     PG_destroy(struct_cache* cache);
-extern void     PG_destroy_unique(struct_cache* cache);
+extern void     PG_destroy(cache_t* cache);
+extern void     PG_destroy_unique(cache_t* cache);
 
 
-struct_cache*   PG_init(guint64 size, char data_type, guint64 block_size, void* params);
+cache_t*   PG_init(guint64 size, char data_type, guint64 block_size, void* params);
 
 
-extern void     PG_remove_element(struct_cache* cache, void* data_to_remove);
-extern guint64 PG_get_size(struct_cache* cache);
+extern void     PG_remove_element(cache_t* cache, void* data_to_remove);
+extern guint64 PG_get_size(cache_t* cache);
 
 
 #ifdef __cplusplus

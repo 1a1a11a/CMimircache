@@ -35,7 +35,7 @@ extern "C"
         }
     }
 
-    static inline gint process_one_element_last_access(cache_line* cp,
+    static inline gint process_one_element_last_access(request_t* cp,
                                                        GHashTable* hash_table,
                                                        guint64 ts);
 
@@ -66,7 +66,7 @@ extern "C"
      */
 
     GSList* get_last_access_dist_seq(reader_t* reader,
-                                     void (*funcPtr)(reader_t*, cache_line*)){
+                                     void (*funcPtr)(reader_t*, request_t*)){
 
 
         GSList* list= NULL;
@@ -75,24 +75,24 @@ extern "C"
             get_num_of_req(reader);
 
         // create cache lize struct and initialization
-        cache_line* cp = new_cacheline();
-        cp->type = reader->base->data_type;
+        request_t* cp = new_req_struct();
+        cp->label_type = reader->base->label_type;
         cp->block_unit_size = (size_t) reader->base->block_unit_size;
 
         // create hashtable
         GHashTable * hash_table;
-        if (cp->type == 'l'){
+        if (cp->label_type == 'l'){
             hash_table = g_hash_table_new_full(g_int64_hash, g_int64_equal, \
                                                (GDestroyNotify)simple_g_key_value_destroyer, \
                                                (GDestroyNotify)simple_g_key_value_destroyer);
         }
-        else if (cp->type == 'c'){
+        else if (cp->label_type == 'c'){
             hash_table = g_hash_table_new_full(g_str_hash, g_str_equal, \
                                                (GDestroyNotify)simple_g_key_value_destroyer, \
                                                (GDestroyNotify)simple_g_key_value_destroyer);
         }
         else{
-            ERROR("unknown data type: %c\n", cp->type);
+            ERROR("unknown data label_type: %c\n", cp->label_type);
             abort();
         }
 
@@ -120,7 +120,7 @@ extern "C"
             funcPtr(reader, cp);
             ts++;
         }
-        if (reader->base->type == 'c'){
+        if (reader->base->trace_type == 'c'){
             csv_params_t *params = reader->reader_params;
             if (params->has_header)
                 list = g_slist_remove(list, list->data);
@@ -145,7 +145,7 @@ extern "C"
      *      No
      *
      * Input:
-     *      cp:             cache_line contains current request
+     *      cp:             request_t contains current request
      *      hash_table:     the hashtable for remembering last access
      *      ts:             current timestamp
      *
@@ -156,31 +156,31 @@ extern "C"
      *-----------------------------------------------------------------------------
      */
 
-    static inline gint process_one_element_last_access(cache_line* cp,
+    static inline gint process_one_element_last_access(request_t* cp,
                                                        GHashTable* hash_table,
                                                        guint64 ts){
         gpointer gp;
-        gp = g_hash_table_lookup(hash_table, cp->item);
+        gp = g_hash_table_lookup(hash_table, cp->label);
         gint ret;
         if (gp == NULL){
             // first time access
             ret = -1;
             guint64* value = g_new(guint64, 1);
             *value = ts;
-            if (cp->type == 'c')
+            if (cp->label_type == 'c')
                 g_hash_table_insert(hash_table,
-                                    g_strdup((gchar*)(cp->item_p)),
+                                    g_strdup((gchar*)(cp->label_ptr)),
                                     (gpointer)value);
 
-            else if (cp->type == 'l'){
+            else if (cp->label_type == 'l'){
                 guint64* key = g_new(guint64, 1);
-                *key = *(guint64*)(cp->item_p);
+                *key = *(guint64*)(cp->label_ptr);
                 g_hash_table_insert(hash_table,
                                     (gpointer)(key),
                                     (gpointer)value);
             }
             else{
-                ERROR("unknown cache line content type: %c\n", cp->type);
+                ERROR("unknown cache line content label_type: %c\n", cp->label_type);
                 exit(1);
             }
         }
@@ -265,11 +265,11 @@ extern "C"
          currently this only works for vscsi reader !!!
          return a GArray of break points, including the last break points
          */
-        if (reader->base->type == 'p'){
+        if (reader->base->trace_type == 'p'){
             ERROR("get_bp_rtime currently don't support plain reader, program exit\n");
             abort();
         }
-        if (reader->base->type == 'c'){
+        if (reader->base->trace_type == 'c'){
             csv_params_t* params = reader->reader_params;
             if (params->real_time_column == -1 || params->real_time_column == 0){
                 ERROR("get_bp_rtime needs you to provide "
@@ -277,7 +277,7 @@ extern "C"
                 exit(1);
             }
         }
-        if (reader->base->type == 'b'){
+        if (reader->base->trace_type == 'b'){
             binary_params_t* params = reader->reader_params;
             if (params->real_time_pos == 0){
                 ERROR("get_bp_rtime needs you to provide "
@@ -306,7 +306,7 @@ extern "C"
         GArray* break_points = g_array_new(FALSE, FALSE, sizeof(guint64));
 
         // create cache line struct and initialization
-        cache_line* cp = new_cacheline();
+        request_t* cp = new_req_struct();
 
         guint64 num = 0;
 

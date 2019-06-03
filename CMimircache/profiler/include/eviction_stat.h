@@ -43,7 +43,7 @@ typedef enum{
 
 
 
-gint64* eviction_stat(reader_t* reader_in, struct_cache* cache, evict_stat_type stat_type);
+gint64* eviction_stat(reader_t* reader_in, cache_t* cache, evict_stat_type stat_type);
 
 
 #ifdef __cplusplus

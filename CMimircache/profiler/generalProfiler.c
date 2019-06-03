@@ -33,7 +33,7 @@ static void profiler_thread(gpointer data, gpointer user_data) {
     int order = GPOINTER_TO_UINT(data);
     guint bin_size = params->bin_size;
 
-    struct_cache* cache = params->cache->core->cache_init(bin_size * order,
+    cache_t* cache = params->cache->core->cache_init(bin_size * order,
                           params->cache->core->data_type,
                           params->cache->core->block_size,
                           params->cache->core->cache_init_params);
@@ -43,20 +43,20 @@ static void profiler_thread(gpointer data, gpointer user_data) {
 
 
     // create cache line struct and initialization
-    cache_line* cp = new_cacheline();
-    cp->type = params->cache->core->data_type;
+    request_t* cp = new_req_struct();
+    cp->label_type = params->cache->core->data_type;
     cp->block_unit_size = (size_t) reader_thread->base->block_unit_size;    // this is not used, block_size goes with cache
     cp->disk_sector_size = (size_t) reader_thread->base->disk_sector_size;
 
 
     guint64 hit_count = 0, miss_count = 0;
-    gboolean (*add_element)(struct cache*, cache_line * cp);
+    gboolean (*add_element)(struct cache*, request_t * cp);
     add_element = cache->core->add_element;
 
     read_one_element(reader_thread, cp);
 
-    // this must happen after read, otherwise cp size and type unknown
-    if (cache->core->consider_size && cp->type == 'l' && cp->disk_sector_size != 0) {    // && cp->size != 0 is removed due to trace dirty
+    // this must happen after read, otherwise cp size and label_type unknown
+    if (cache->core->use_block_size && cp->label_type == 'l' && cp->disk_sector_size != 0) {    // && cp->size != 0 is removed due to trace dirty
         add_element = cache->core->add_element_withsize;
         if (add_element == NULL) {
             ERROR("using size with profiling, cannot find add_element_withsize\n");
@@ -151,7 +151,7 @@ static void get_eviction_age_thread(gpointer data, gpointer user_data) {
     int order = GPOINTER_TO_UINT(data);
     guint bin_size = params->bin_size;
 
-    struct_cache* cache = params->cache->core->cache_init(bin_size * order,
+    cache_t* cache = params->cache->core->cache_init(bin_size * order,
                           params->cache->core->data_type,
                           params->cache->core->block_size,
                           params->cache->core->cache_init_params);
@@ -179,18 +179,18 @@ static void get_eviction_age_thread(gpointer data, gpointer user_data) {
 
 
     // create cache line struct and initialization
-    cache_line* cp = new_cacheline();
-    cp->type = params->cache->core->data_type;
+    request_t* cp = new_req_struct();
+    cp->label_type = params->cache->core->data_type;
     cp->block_unit_size = (size_t) reader_thread->base->block_unit_size;    // this is not used, block_size goes with cache
     cp->disk_sector_size = (size_t) reader_thread->base->disk_sector_size;
 
 
     guint64 hit_count = 0, miss_count = 0;
-    void (*insert_element)(struct cache*, cache_line * cp);
-    void (*update_element)(struct cache*, cache_line * cp);
-    gboolean (*check_element)(struct cache*, cache_line * cp);
-    gboolean (*add_element)(struct cache*, cache_line * cp);
-    gpointer (*evict_element)(struct cache*, cache_line * cp);
+    void (*insert_element)(struct cache*, request_t * cp);
+    void (*update_element)(struct cache*, request_t * cp);
+    gboolean (*check_element)(struct cache*, request_t * cp);
+    gboolean (*add_element)(struct cache*, request_t * cp);
+    gpointer (*evict_element)(struct cache*, request_t * cp);
     guint64 (*get_size)(cache_t*);
     gpointer evicted_obj;
 
@@ -199,12 +199,12 @@ static void get_eviction_age_thread(gpointer data, gpointer user_data) {
     check_element = cache->core->check_element;
     add_element = cache->core->add_element_only;
     evict_element = cache->core->__evict_with_return;
-    get_size = cache->core->get_size;
+    get_size = cache->core->get_current_size;
 
     read_one_element(reader_thread, cp);
 
-    // this must happen after read, otherwise cp size and type unknown
-    if (cache->core->consider_size && cp->type == 'l' && cp->disk_sector_size != 0) {    // && cp->size != 0 is removed due to trace dirty
+    // this must happen after read, otherwise cp size and label_type unknown
+    if (cache->core->use_block_size && cp->label_type == 'l' && cp->disk_sector_size != 0) {    // && cp->size != 0 is removed due to trace dirty
         add_element = cache->core->add_element_only;
         if (add_element == NULL) {
             ERROR("using size with profiling, cannot find add_element_withsize\n");
@@ -221,10 +221,10 @@ static void get_eviction_age_thread(gpointer data, gpointer user_data) {
         /* record last reference time */
         if (cache->core->data_type == 'l'){
             key = (gpointer)g_new(guint64, 1);
-            *(guint64*)key = *(guint64*)(cp->item_p);
+            *(guint64*)key = *(guint64*)(cp->label_ptr);
         }
         else if (cache->core->data_type == 'c'){
-            key = (gpointer) g_strdup((gchar*) cp->item_p);
+            key = (gpointer) g_strdup((gchar*) cp->label_ptr);
         }
         g_hash_table_replace(last_ref_ht, key, GINT_TO_POINTER(cur_ts));
 
@@ -246,7 +246,7 @@ static void get_eviction_age_thread(gpointer data, gpointer user_data) {
                 last_ref_ts = GPOINTER_TO_INT(g_hash_table_lookup(last_ref_ht, evicted_obj));
                 eviction_age[last_ref_ts] = cur_ts - last_ref_ts;
                 //                printf("set ts %ld req to %ld (%ld - %ld) cache size %ld\n", last_ref_ts, cur_ts-last_ref_ts, cur_ts, last_ref_ts,
-                //                       cache->core->get_size(cache));
+                //                       cache->core->get_current_size(cache));
                 g_free(evicted_obj);
             }
         }
@@ -279,7 +279,7 @@ static void get_eviction_age_thread(gpointer data, gpointer user_data) {
         int order = GPOINTER_TO_UINT(data);
         guint bin_size = params->bin_size;
 
-        struct_cache* cache = params->cache->core->cache_init(bin_size * order,
+        cache_t* cache = params->cache->core->cache_init(bin_size * order,
                                                               params->cache->core->data_type,
                                                               params->cache->core->block_size,
                                                               params->cache->core->cache_init_params);
@@ -290,20 +290,20 @@ static void get_eviction_age_thread(gpointer data, gpointer user_data) {
 
 
         // create cache line struct and initialization
-        cache_line* cp = new_cacheline();
-        cp->type = params->cache->core->data_type;
+        request_t* cp = new_req_struct();
+        cp->label_type = params->cache->core->data_type;
         cp->block_unit_size = (size_t) reader_thread->base->block_unit_size;    // this is not used, block_size goes with cache
         cp->disk_sector_size = (size_t) reader_thread->base->disk_sector_size;
 
 
         guint64 hit_count = 0, miss_count = 0;
-        gboolean (*add_element)(struct cache*, cache_line * cp);
+        gboolean (*add_element)(struct cache*, request_t * cp);
         add_element = cache->core->add_element;
 
         read_one_element(reader_thread, cp);
 
-        // this must happen after read, otherwise cp size and type unknown
-        if (cache->core->consider_size && cp->type == 'l' && cp->disk_sector_size != 0) {    // && cp->size != 0 is removed due to trace dirty
+        // this must happen after read, otherwise cp size and label_type unknown
+        if (cache->core->use_block_size && cp->label_type == 'l' && cp->disk_sector_size != 0) {    // && cp->size != 0 is removed due to trace dirty
             add_element = cache->core->add_element_withsize;
             if (add_element == NULL) {
                 ERROR("using size with profiling, cannot find add_element_withsize\n");
@@ -356,7 +356,7 @@ static void get_eviction_age_thread(gpointer data, gpointer user_data) {
         int order = GPOINTER_TO_UINT(data);
         guint bin_size = params->bin_size;
 
-        struct_cache* cache = params->cache->core->cache_init(bin_size * order,
+        cache_t* cache = params->cache->core->cache_init(bin_size * order,
                                                               params->cache->core->data_type,
                                                               params->cache->core->block_size,
                                                               params->cache->core->cache_init_params);
@@ -368,20 +368,20 @@ static void get_eviction_age_thread(gpointer data, gpointer user_data) {
 
 
         // create cache line struct and initialization
-        cache_line* cp = new_cacheline();
-        cp->type = params->cache->core->data_type;
+        request_t* cp = new_req_struct();
+        cp->label_type = params->cache->core->data_type;
         cp->block_unit_size = (size_t) reader_thread->base->block_unit_size;    // this is not used, block_size goes with cache
         cp->disk_sector_size = (size_t) reader_thread->base->disk_sector_size;
 
 
         guint64 hit_count = 0, miss_count = 0;
-        gboolean (*add_element)(struct cache*, cache_line * cp);
+        gboolean (*add_element)(struct cache*, request_t * cp);
         add_element = cache->core->add_element;
 
         read_one_element(reader_thread, cp);
 
-        // this must happen after read, otherwise cp size and type unknown
-        if (cache->core->consider_size && cp->type == 'l' && cp->disk_sector_size != 0) {    // && cp->size != 0 is removed due to trace dirty
+        // this must happen after read, otherwise cp size and label_type unknown
+        if (cache->core->use_block_size && cp->label_type == 'l' && cp->disk_sector_size != 0) {    // && cp->size != 0 is removed due to trace dirty
             add_element = cache->core->add_element_withsize;
             if (add_element == NULL) {
                 ERROR("using size with profiling, cannot find add_element_withsize\n");
@@ -424,7 +424,7 @@ static void get_eviction_age_thread(gpointer data, gpointer user_data) {
 
 
 return_res_t** profiler(reader_t* reader_in,
-                        struct_cache* cache_in,
+                        cache_t* cache_in,
                         int num_of_threads_in,
                         int bin_size_in,
                         profiler_type_e prof_type) {
@@ -447,7 +447,7 @@ return_res_t** profiler(reader_t* reader_in,
         get_num_of_req(reader_in);
 
     // check whether profiling considering size or not
-    if (cache_in->core->consider_size && reader_in->base->data_type == 'l'
+    if (cache_in->core->use_block_size && reader_in->base->label_type == 'l'
             && reader_in->base->disk_sector_size != 0 &&
             cache_in->core->block_size != 0) {    // && cp->size != 0 is removed due to trace dirty
         INFO("use block size %lu, disk sector size %lu in profiling\n",
@@ -493,7 +493,7 @@ return_res_t** profiler(reader_t* reader_in,
         gthread_pool = g_thread_pool_new ( (GFunc) get_evictions_thread,
                                           (gpointer)params, num_of_threads, TRUE, NULL);
     else{
-        ERROR("unknown profiler type %d\n", prof_type);
+        ERROR("unknown profiler label_type %d\n", prof_type);
         abort();
     }
 
@@ -529,14 +529,14 @@ return_res_t** profiler(reader_t* reader_in,
 }
 
 
-static void traverse_trace(reader_t* reader, struct_cache* cache) {
+static void traverse_trace(reader_t* reader, cache_t* cache) {
 
     // create cache lize struct and initialization
-    cache_line* cp = new_cacheline();
-    cp->type = cache->core->data_type;
+    request_t* cp = new_req_struct();
+    cp->label_type = cache->core->data_type;
     cp->block_unit_size = (size_t) reader->base->block_unit_size;
 
-    gboolean (*add_element)(struct cache*, cache_line * cp);
+    gboolean (*add_element)(struct cache*, request_t * cp);
     add_element = cache->core->add_element;
 
     read_one_element(reader, cp);
@@ -552,17 +552,17 @@ static void traverse_trace(reader_t* reader, struct_cache* cache) {
 }
 
 
-//static void get_evict_err(reader_t* reader, struct_cache* cache){
+//static void get_evict_err(reader_t* reader, cache_t* cache){
 //
 //    cache->core->bp_pos = 1;
 //    cache->core->evict_err_array = g_new0(gdouble, reader->sdata->break_points->array->len-1);
 //
 //    // create cache lize struct and initialization
-//    cache_line* cp = new_cacheline();
-//    cp->type = cache->core->data_type;
+//    request_t* cp = new_req_struct();
+//    cp->label_type = cache->core->label_type;
 //    cp->block_size = (size_t) reader->base->block_size;
 //
-//    gboolean (*add_element)(struct cache*, cache_line* cp);
+//    gboolean (*add_element)(struct cache*, request_t* cp);
 //    add_element = cache->core->add_element;
 //
 //    read_one_element(reader, cp);
@@ -581,7 +581,7 @@ static void traverse_trace(reader_t* reader, struct_cache* cache) {
 
 
 
-//gdouble* LRU_evict_err_statistics(reader_t* reader_in, struct_cache* cache_in, guint64 time_interval){
+//gdouble* LRU_evict_err_statistics(reader_t* reader_in, cache_t* cache_in, guint64 time_interval){
 //
 //    gen_breakpoints_realtime(reader_in, time_interval, -1);
 //    cache_in->core->bp = reader_in->sdata->break_points;
@@ -591,11 +591,11 @@ static void traverse_trace(reader_t* reader, struct_cache* cache) {
 //    struct optimal_init_params* init_params = g_new0(struct optimal_init_params, 1);
 //    init_params->reader = reader_in;
 //    init_params->ts = 0;
-//    struct_cache* optimal;
-//    if (cache_in->core->data_type == 'l')
+//    cache_t* optimal;
+//    if (cache_in->core->label_type == 'l')
 //        optimal = optimal_init(cache_in->core->size, 'l', 0, (void*)init_params);
 //    else{
-//        printf("other cache data type not supported in LRU_evict_err_statistics in generalProfiler\n");
+//        printf("other cache data label_type not supported in LRU_evict_err_statistics in generalProfiler\n");
 //        exit(1);
 //    }
 //    optimal->core->record_level = 1;
@@ -605,7 +605,7 @@ static void traverse_trace(reader_t* reader, struct_cache* cache) {
 //    if (reader_in->base->total_num == -1)
 //        get_num_of_req(reader_in);
 //
-//    if (reader_in->base->type == 'v')
+//    if (reader_in->base->label_type == 'v')
 //        optimal->core->eviction_array = g_new0(guint64, reader_in->base->total_num);
 //    else
 //        optimal->core->eviction_array = g_new0(gchar*, reader_in->base->total_num);

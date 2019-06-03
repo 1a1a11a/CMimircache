@@ -70,7 +70,7 @@ return_res_t** profiler(
 
 gdouble* LRU_evict_err_statistics(
                                 reader_t* reader_in,
-                                struct_cache* cache_in,
+                                cache_t* cache_in,
                                 guint64 time_interval
                                 );
 

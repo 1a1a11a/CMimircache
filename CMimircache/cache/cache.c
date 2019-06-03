@@ -17,7 +17,7 @@ extern "C"
 
 
 
-void cache_destroy(struct_cache* cache){
+void cache_destroy(cache_t* cache){
     if (cache->cache_params){
         g_free(cache->cache_params);
         cache->cache_params = NULL;
@@ -62,7 +62,7 @@ void cache_destroy(struct_cache* cache){
     g_free(cache);
 }
 
-void cache_destroy_unique(struct_cache* cache){
+void cache_destroy_unique(cache_t* cache){
     if (cache->cache_params){
         g_free(cache->cache_params);
         cache->cache_params = NULL;
@@ -72,18 +72,18 @@ void cache_destroy_unique(struct_cache* cache){
 }
 
 
-struct_cache* cache_init(long long size, char data_type, guint64 block_size){
-    struct_cache *cache = g_new0(struct_cache, 1);
+cache_t* cache_init(long long size, char data_type, guint64 block_size){
+    cache_t *cache = g_new0(cache_t, 1);
     cache->core = g_new0(struct cache_core, 1);
     cache->core->size = size;
     cache->core->cache_init_params = NULL;
     cache->core->data_type = data_type;
     if (block_size != 0 && block_size != -1){
-        cache->core->consider_size = TRUE;
+        cache->core->use_block_size = TRUE;
         cache->core->block_size = block_size;
     }
     else {
-        cache->core->consider_size = FALSE;
+        cache->core->use_block_size = FALSE;
         cache->core->block_size = 0;
     }
     return cache;

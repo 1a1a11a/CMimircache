@@ -30,25 +30,25 @@ typedef struct LRU_params LRU_params_t;
 
 
 
-extern gboolean LRU_check_element(struct_cache* cache, cache_line* cp);
-extern gboolean LRU_add_element(struct_cache* cache, cache_line* cp);
+extern gboolean LRU_check_element(cache_t* cache, request_t* cp);
+extern gboolean LRU_add_element(cache_t* cache, request_t* cp);
 
 
-extern void     __LRU_insert_element(struct_cache* LRU, cache_line* cp);
-extern void     __LRU_update_element(struct_cache* LRU, cache_line* cp);
-extern void     __LRU_evict_element(struct_cache* LRU, cache_line* cp);
-extern void*    __LRU__evict_with_return(struct_cache* LRU, cache_line* cp);
+extern void     __LRU_insert_element(cache_t* LRU, request_t* cp);
+extern void     __LRU_update_element(cache_t* LRU, request_t* cp);
+extern void     __LRU_evict_element(cache_t* LRU, request_t* cp);
+extern void*    __LRU__evict_with_return(cache_t* LRU, request_t* cp);
 
 
-extern void     LRU_destroy(struct_cache* cache);
-extern void     LRU_destroy_unique(struct_cache* cache);
+extern void     LRU_destroy(cache_t* cache);
+extern void     LRU_destroy_unique(cache_t* cache);
 
 
-struct_cache*   LRU_init(guint64 size, char data_type, guint64 block_size, void* params);
+cache_t*   LRU_init(guint64 size, char data_type, guint64 block_size, void* params);
 
 
-extern void     LRU_remove_element(struct_cache* cache, void* data_to_remove);
-extern guint64 LRU_get_size(struct_cache* cache);
+extern void     LRU_remove_element(cache_t* cache, void* data_to_remove);
+extern guint64 LRU_get_size(cache_t* cache);
 
 
 #ifdef __cplusplus

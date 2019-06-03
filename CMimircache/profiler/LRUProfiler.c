@@ -18,14 +18,14 @@ extern "C"
 
 
 static inline sTree*
-process_one_element(cache_line* cp,
+process_one_element(request_t* cp,
                     sTree* splay_tree,
                     GHashTable* hash_table,
                     guint64 ts,
                     gint64* reuse_dist);
 
 static inline sTree*
-process_one_element_shards(cache_line* cp,
+process_one_element_shards(request_t* cp,
                     sTree* splay_tree,
                     GHashTable* hash_table,
                     guint64 ts,
@@ -76,23 +76,23 @@ guint64* get_hit_count_seq(reader_t* reader,
 
     // create cache lize struct and initialization
     // create cache line struct and initializa
-    cache_line* cp = new_cacheline();
-    cp->type = reader->base->data_type;
+    request_t* cp = new_req_struct();
+    cp->label_type = reader->base->label_type;
 
     // create hashtable
     GHashTable * hash_table;
-    if (reader->base->data_type == 'l'){
+    if (reader->base->label_type == 'l'){
         hash_table = g_hash_table_new_full(g_int64_hash, g_int64_equal, \
                                            (GDestroyNotify)simple_g_key_value_destroyer, \
                                            (GDestroyNotify)simple_g_key_value_destroyer);
     }
-    else if (reader->base->data_type == 'c' ){
+    else if (reader->base->label_type == 'c' ){
         hash_table = g_hash_table_new_full(g_str_hash, g_str_equal, \
                                            (GDestroyNotify)simple_g_key_value_destroyer, \
                                            (GDestroyNotify)simple_g_key_value_destroyer);
     }
     else{
-        ERROR("does not recognize reader data type %c\n", reader->base->data_type);
+        ERROR("does not recognize reader data label_type %c\n", reader->base->label_type);
         abort();
     }
 
@@ -114,7 +114,7 @@ guint64* get_hit_count_seq(reader_t* reader,
     }
 
     // clean up
-    destroy_cacheline(cp);
+    destroy_req_struct(cp);
     g_hash_table_destroy(hash_table);
     free_sTree(splay_tree);
     reset_reader(reader);
@@ -139,7 +139,7 @@ guint64* get_hitcount_withsize_seq(reader_t* reader, gint64 size, int block_unit
         size = reader->base->total_num;
 
     // check for size option
-    if (reader->base->type == 'p' || reader->base->data_type == 'c'){
+    if (reader->base->trace_type == 'p' || reader->base->label_type == 'c'){
         ERROR("plain reader or dataType c does not support profiling with size\n");
         abort();
     }
@@ -152,8 +152,8 @@ guint64* get_hitcount_withsize_seq(reader_t* reader, gint64 size, int block_unit
 
 
     // create cache line struct and initialization
-    cache_line* cp = new_cacheline();
-    cp->type = reader->base->data_type;
+    request_t* cp = new_req_struct();
+    cp->label_type = reader->base->label_type;
 
     cp->block_unit_size = reader->base->block_unit_size;
     cp->disk_sector_size = reader->base->disk_sector_size;
@@ -165,18 +165,18 @@ guint64* get_hitcount_withsize_seq(reader_t* reader, gint64 size, int block_unit
 
     // create hashtable
     GHashTable * hash_table;
-    if (reader->base->data_type == 'l'){
+    if (reader->base->label_type == 'l'){
         hash_table = g_hash_table_new_full(g_int64_hash, g_int64_equal, \
                                            (GDestroyNotify)simple_g_key_value_destroyer, \
                                            (GDestroyNotify)simple_g_key_value_destroyer);
     }
-    else if (reader->base->data_type == 'c' ){
+    else if (reader->base->label_type == 'c' ){
         hash_table = g_hash_table_new_full(g_str_hash, g_str_equal, \
                                            (GDestroyNotify)simple_g_key_value_destroyer, \
                                            (GDestroyNotify)simple_g_key_value_destroyer);
     }
     else{
-        ERROR("does not recognize reader data type %c\n", reader->base->data_type);
+        ERROR("does not recognize reader data label_type %c\n", reader->base->label_type);
         abort();
     }
 
@@ -186,7 +186,7 @@ guint64* get_hitcount_withsize_seq(reader_t* reader, gint64 size, int block_unit
 
     read_one_element(reader, cp);
     while (cp->valid){
-        *(gint64*)(cp->item_p) = (gint64) (*(gint64*)(cp->item_p) * cp->disk_sector_size / block_unit_size);
+        *(gint64*)(cp->label_ptr) = (gint64) (*(gint64*)(cp->label_ptr) * cp->disk_sector_size / block_unit_size);
 
         splay_tree = process_one_element(cp, splay_tree, hash_table, ts, &reuse_dist);
         if (reuse_dist == -1)
@@ -198,29 +198,29 @@ guint64* get_hitcount_withsize_seq(reader_t* reader, gint64 size, int block_unit
 
         // new 170428
         if (cp->size == 0){
-            if (cp->type == 'c'){
-                WARNING("ts %lu, request lbn %s size 0\n", (unsigned long) ts, (char*)(cp->item_p));
+            if (cp->label_type == 'c'){
+                WARNING("ts %lu, request lbn %s size 0\n", (unsigned long) ts, (char*)(cp->label_ptr));
             }
             else{
-                WARNING("ts %lu, request lbn %ld size 0\n", (unsigned long) ts, *(long*)(cp->item_p));
+                WARNING("ts %lu, request lbn %ld size 0\n", (unsigned long) ts, *(long*)(cp->label_ptr));
             }
         }
 
         n = (int)ceil((double) cp->size/block_unit_size);
         for (i=0; i<n-1; i++){
             ts++;
-            (*(guint64*)(cp->item_p)) ++;
+            (*(guint64*)(cp->label_ptr)) ++;
             splay_tree = process_one_element(cp, splay_tree, hash_table, ts, &reuse_dist);
         }
         // end
-        (*(guint64*)(cp->item_p)) -= (n-1);
+        (*(guint64*)(cp->label_ptr)) -= (n-1);
 
         ts++;
         read_one_element(reader, cp);
     }
 
     // clean up
-    destroy_cacheline(cp);
+    destroy_req_struct(cp);
     g_hash_table_destroy(hash_table);
     free_sTree(splay_tree);
     reset_reader(reader);
@@ -298,23 +298,23 @@ guint64* get_hit_count_seq_shards(reader_t* reader,
     assert(hit_count_array != NULL);
 
     // create cache line struct and initializa
-    cache_line* cp = new_cacheline();
-    cp->type = reader->base->data_type;
+    request_t* cp = new_req_struct();
+    cp->label_type = reader->base->label_type;
 
     // create hashtable
     GHashTable * hash_table;
-    if (reader->base->data_type == 'l'){
+    if (reader->base->label_type == 'l'){
         hash_table = g_hash_table_new_full(g_int64_hash, g_int64_equal, \
                                            (GDestroyNotify)simple_g_key_value_destroyer, \
                                            (GDestroyNotify)simple_g_key_value_destroyer);
     }
-    else if (reader->base->data_type == 'c' ){
+    else if (reader->base->label_type == 'c' ){
         hash_table = g_hash_table_new_full(g_str_hash, g_str_equal, \
                                            (GDestroyNotify)simple_g_key_value_destroyer, \
                                            (GDestroyNotify)simple_g_key_value_destroyer);
     }
     else{
-        ERROR("does not recognize reader data type %c\n", reader->base->data_type);
+        ERROR("does not recognize reader data label_type %c\n", reader->base->label_type);
         abort();
     }
 
@@ -333,7 +333,7 @@ guint64* get_hit_count_seq_shards(reader_t* reader,
         uint32_t hash[1];                /* Output for the hash */
         uint32_t seed = 43;              /* Seed value for hash */
 
-        MurmurHash3_x86_32(cp->item_p, strlen(cp->item_p), seed, hash);
+        MurmurHash3_x86_32(cp->label_ptr, strlen(cp->label_ptr), seed, hash);
 
         uint32_t hash_val = hash[0];
         gint64 mod_res = hash_val % mod_val;
@@ -366,7 +366,7 @@ guint64* get_hit_count_seq_shards(reader_t* reader,
 
 
     // clean up
-    destroy_cacheline(cp);
+    destroy_req_struct(cp);
     g_hash_table_destroy(hash_table);
     free_sTree(splay_tree);
     reset_reader(reader);
@@ -433,23 +433,23 @@ guint64* get_hit_count_phase(reader_t* reader, gint64 current_phase, gint64 num_
     guint64* hit_count_array = g_new0(guint64, (gint64)request_per_phase+3);
 
     // create cache line struct and initializa
-    cache_line* cp = new_cacheline();
-    cp->type = reader->base->data_type;
+    request_t* cp = new_req_struct();
+    cp->label_type = reader->base->label_type;
 
     // create hashtable
     GHashTable * hash_table;
-    if (reader->base->data_type == 'l'){
+    if (reader->base->label_type == 'l'){
         hash_table = g_hash_table_new_full(g_int64_hash, g_int64_equal, \
                                            (GDestroyNotify)simple_g_key_value_destroyer, \
                                            (GDestroyNotify)simple_g_key_value_destroyer);
     }
-    else if (reader->base->data_type == 'c' ){
+    else if (reader->base->label_type == 'c' ){
         hash_table = g_hash_table_new_full(g_str_hash, g_str_equal, \
                                            (GDestroyNotify)simple_g_key_value_destroyer, \
                                            (GDestroyNotify)simple_g_key_value_destroyer);
     }
     else{
-        ERROR("does not recognize reader data type %c\n", reader->base->data_type);
+        ERROR("does not recognize reader data label_type %c\n", reader->base->label_type);
         abort();
     }
 
@@ -479,7 +479,7 @@ guint64* get_hit_count_phase(reader_t* reader, gint64 current_phase, gint64 num_
     }
 
     // clean up
-    destroy_cacheline(cp);
+    destroy_req_struct(cp);
     g_hash_table_destroy(hash_table);
     free_sTree(splay_tree);
     reset_reader(reader);
@@ -570,23 +570,23 @@ gint64* get_reuse_dist_seq(reader_t* reader){
     gint64 * reuse_dist_array = g_new(gint64, reader->base->total_num);
 
     // create cache line struct and initializa
-    cache_line* cp = new_cacheline();
-    cp->type = reader->base->data_type;
+    request_t* cp = new_req_struct();
+    cp->label_type = reader->base->label_type;
 
     // create hashtable
     GHashTable * hash_table;
-    if (reader->base->data_type == 'l'){
+    if (reader->base->label_type == 'l'){
         hash_table = g_hash_table_new_full(g_int64_hash, g_int64_equal, \
                                            (GDestroyNotify)simple_g_key_value_destroyer, \
                                            (GDestroyNotify)simple_g_key_value_destroyer);
     }
-    else if (reader->base->data_type == 'c' ){
+    else if (reader->base->label_type == 'c' ){
         hash_table = g_hash_table_new_full(g_str_hash, g_str_equal, \
                                            (GDestroyNotify)simple_g_key_value_destroyer, \
                                            (GDestroyNotify)simple_g_key_value_destroyer);
     }
     else{
-        ERROR("does not recognize reader data type %c\n", reader->base->data_type);
+        ERROR("does not recognize reader data label_type %c\n", reader->base->label_type);
         abort();
     }
 
@@ -596,10 +596,10 @@ gint64* get_reuse_dist_seq(reader_t* reader){
     read_one_element(reader, cp);
     while (cp->valid){
         if (/* DISABLES CODE */ (0)){
-            if (cp->type == 'l')
-                printf("read in %ld\n", *(long*)(cp->item_p));
+            if (cp->label_type == 'l')
+                printf("read in %ld\n", *(long*)(cp->label_ptr));
             else
-                printf("read in %s\n", (char*) (cp->item_p));
+                printf("read in %s\n", (char*) (cp->label_ptr));
         }
 
         splay_tree = process_one_element(cp, splay_tree, hash_table,
@@ -619,7 +619,7 @@ gint64* get_reuse_dist_seq(reader_t* reader){
 
 
     // clean up
-    destroy_cacheline(cp);
+    destroy_req_struct(cp);
     g_hash_table_destroy(hash_table);
     free_sTree(splay_tree);
     reset_reader(reader);
@@ -628,7 +628,7 @@ gint64* get_reuse_dist_seq(reader_t* reader){
 
 
 gint64* get_future_reuse_dist(reader_t* reader){
-    /*  this function finds har far in the future, a given item will be requested again,
+    /*  this function finds har far in the future, a given label will be requested again,
      *  if it won't be requested again, then -1.
      *  ATTENTION: the reuse distance of the last element is at last,
      *  meaning the sequence is NOT reversed.
@@ -653,23 +653,23 @@ gint64* get_future_reuse_dist(reader_t* reader){
     gint64 * reuse_dist_array = g_new(gint64, reader->base->total_num);
 
     // create cache line struct and initializa
-    cache_line* cp = new_cacheline();
-    cp->type = reader->base->data_type;
+    request_t* cp = new_req_struct();
+    cp->label_type = reader->base->label_type;
 
     // create hashtable
     GHashTable * hash_table;
-    if (reader->base->data_type == 'l'){
+    if (reader->base->label_type == 'l'){
         hash_table = g_hash_table_new_full(g_int64_hash, g_int64_equal, \
                                            (GDestroyNotify)simple_g_key_value_destroyer, \
                                            (GDestroyNotify)simple_g_key_value_destroyer);
     }
-    else if (reader->base->data_type == 'c' ){
+    else if (reader->base->label_type == 'c' ){
         hash_table = g_hash_table_new_full(g_str_hash, g_str_equal, \
                                            (GDestroyNotify)simple_g_key_value_destroyer, \
                                            (GDestroyNotify)simple_g_key_value_destroyer);
     }
     else{
-        ERROR("does not recognize reader data type %c\n", reader->base->data_type);
+        ERROR("does not recognize reader data label_type %c\n", reader->base->label_type);
         abort();
     }
 
@@ -709,7 +709,7 @@ gint64* get_future_reuse_dist(reader_t* reader){
     reader->sdata->reuse_dist_type = FUTURE_REUSE_DISTANCE;
 
     // clean up
-    destroy_cacheline(cp);
+    destroy_req_struct(cp);
     g_hash_table_destroy(hash_table);
     free_sTree(splay_tree);
     reset_reader(reader);
@@ -751,36 +751,36 @@ gint64* get_dist_to_last_access(reader_t* reader){
     gint64 * dist_array = g_new(gint64, reader->base->total_num);
 
     // create cache line struct and initializa
-    cache_line* cp = new_cacheline();
-    cp->type = reader->base->data_type;
+    request_t* cp = new_req_struct();
+    cp->label_type = reader->base->label_type;
 
     // create hashtable
     GHashTable * hash_table;
-    if (reader->base->data_type == 'l'){
+    if (reader->base->label_type == 'l'){
         hash_table = g_hash_table_new_full(g_int64_hash, g_int64_equal, \
                                            (GDestroyNotify)simple_g_key_value_destroyer, \
                                            (GDestroyNotify)simple_g_key_value_destroyer);
     }
-    else if (reader->base->data_type == 'c' ){
+    else if (reader->base->label_type == 'c' ){
         hash_table = g_hash_table_new_full(g_str_hash, g_str_equal, \
                                            (GDestroyNotify)simple_g_key_value_destroyer, \
                                            (GDestroyNotify)simple_g_key_value_destroyer);
     }
     else{
-        ERROR("does not recognize reader data type %c\n", reader->base->data_type);
+        ERROR("does not recognize reader data label_type %c\n", reader->base->label_type);
         abort();
     }
 
     read_one_element(reader, cp);
     while (cp->valid){
         if (/* DISABLES CODE */ (0)){
-            if (cp->type == 'l')
-                printf("read in %ld\n", *(long*)(cp->item_p));
+            if (cp->label_type == 'l')
+                printf("read in %ld\n", *(long*)(cp->label_ptr));
             else
-                printf("read in %s\n", (char*) (cp->item_p));
+                printf("read in %s\n", (char*) (cp->label_ptr));
         }
 
-        value = g_hash_table_lookup(hash_table, cp->item_p);
+        value = g_hash_table_lookup(hash_table, cp->label_ptr);
         if (value != NULL){
             dist = (gint64) ts - *(gint64*) (value);
         }
@@ -799,12 +799,12 @@ gint64* get_dist_to_last_access(reader_t* reader){
             exit(1);
         }
         *value = ts;
-        if (cp->type == 'c')
-            g_hash_table_insert(hash_table, g_strdup((gchar*)(cp->item_p)), (gpointer)value);
+        if (cp->label_type == 'c')
+            g_hash_table_insert(hash_table, g_strdup((gchar*)(cp->label_ptr)), (gpointer)value);
 
-        else if (cp->type == 'l'){
+        else if (cp->label_type == 'l'){
             gint64* key = g_new(gint64, 1);
-            *key = *(guint64*)(cp->item_p);
+            *key = *(guint64*)(cp->label_ptr);
             g_hash_table_insert(hash_table, (gpointer)(key), (gpointer)value);
         }
 
@@ -820,7 +820,7 @@ gint64* get_dist_to_last_access(reader_t* reader){
 
 
     // clean up
-    destroy_cacheline(cp);
+    destroy_req_struct(cp);
     g_hash_table_destroy(hash_table);
     reset_reader(reader);
     return dist_array;
@@ -872,23 +872,23 @@ gint64* get_reuse_time(reader_t* reader){
     gint64 * dist_array = g_new(gint64, reader->base->total_num);
 
     // create cache line struct and initializa
-    cache_line* cp = new_cacheline();
-    cp->type = reader->base->data_type;
+    request_t* cp = new_req_struct();
+    cp->label_type = reader->base->label_type;
 
     // create hashtable
     GHashTable * hash_table;
-    if (reader->base->data_type == 'l'){
+    if (reader->base->label_type == 'l'){
         hash_table = g_hash_table_new_full(g_int64_hash, g_int64_equal, \
                                            (GDestroyNotify)simple_g_key_value_destroyer, \
                                            (GDestroyNotify)simple_g_key_value_destroyer);
     }
-    else if (reader->base->data_type == 'c' ){
+    else if (reader->base->label_type == 'c' ){
         hash_table = g_hash_table_new_full(g_str_hash, g_str_equal, \
                                            (GDestroyNotify)simple_g_key_value_destroyer, \
                                            (GDestroyNotify)simple_g_key_value_destroyer);
     }
     else{
-        ERROR("does not recognize reader data type %c\n", reader->base->data_type);
+        ERROR("does not recognize reader data label_type %c\n", reader->base->label_type);
         abort();
     }
 
@@ -901,13 +901,13 @@ gint64* get_reuse_time(reader_t* reader){
 
     while (cp->valid){
         if (/* DISABLES CODE */ (0)){
-            if (cp->type == 'l')
-                printf("read in %ld\n", *(long*)(cp->item_p));
+            if (cp->label_type == 'l')
+                printf("read in %ld\n", *(long*)(cp->label_ptr));
             else
-                printf("read in %s\n", (char*) (cp->item_p));
+                printf("read in %s\n", (char*) (cp->label_ptr));
         }
 
-        value = g_hash_table_lookup(hash_table, cp->item_p);
+        value = g_hash_table_lookup(hash_table, cp->label_ptr);
         if (value != NULL){
             rt = (gint64) cp->real_time - *(gint64*) (value);
         }
@@ -926,12 +926,12 @@ gint64* get_reuse_time(reader_t* reader){
             exit(1);
         }
         *value = cp->real_time;
-        if (cp->type == 'c')
-            g_hash_table_insert(hash_table, g_strdup((gchar*)(cp->item_p)), (gpointer)value);
+        if (cp->label_type == 'c')
+            g_hash_table_insert(hash_table, g_strdup((gchar*)(cp->label_ptr)), (gpointer)value);
 
-        else if (cp->type == 'l'){
+        else if (cp->label_type == 'l'){
             gint64* key = g_new(gint64, 1);
-            *key = *(guint64*)(cp->item_p);
+            *key = *(guint64*)(cp->label_ptr);
             g_hash_table_insert(hash_table, (gpointer)(key), (gpointer)value);
         }
 
@@ -947,7 +947,7 @@ gint64* get_reuse_time(reader_t* reader){
 
 
     // clean up
-    destroy_cacheline(cp);
+    destroy_req_struct(cp);
     g_hash_table_destroy(hash_table);
     reset_reader(reader);
     return dist_array;
@@ -1064,14 +1064,14 @@ void load_reuse_dist(reader_t * const reader,
  *
  *-----------------------------------------------------------------------------
  */
-static inline sTree* process_one_element(cache_line* cp,
+static inline sTree* process_one_element(request_t* cp,
                                          sTree* splay_tree,
                                          GHashTable* hash_table,
                                          guint64 ts,
                                          gint64* reuse_dist){
     gpointer gp;
 
-    gp = g_hash_table_lookup(hash_table, cp->item_p);
+    gp = g_hash_table_lookup(hash_table, cp->label_ptr);
 
     sTree* newtree;
     if (gp == NULL){
@@ -1083,16 +1083,16 @@ static inline sTree* process_one_element(cache_line* cp,
             exit(1);
         }
         *value = ts;
-        if (cp->type == 'c')
-            g_hash_table_insert(hash_table, g_strdup((gchar*)(cp->item_p)), (gpointer)value);
+        if (cp->label_type == 'c')
+            g_hash_table_insert(hash_table, g_strdup((gchar*)(cp->label_ptr)), (gpointer)value);
 
-        else if (cp->type == 'l'){
+        else if (cp->label_type == 'l'){
             gint64* key = g_new(gint64, 1);
-            *key = *(guint64*)(cp->item_p);
+            *key = *(guint64*)(cp->label_ptr);
             g_hash_table_insert(hash_table, (gpointer)(key), (gpointer)value);
         }
         else{
-            ERROR("unknown cache line content type: %c\n", cp->type);
+            ERROR("unknown cache line content label_type: %c\n", cp->label_type);
             exit(1);
         }
         *reuse_dist = -1;
@@ -1135,14 +1135,14 @@ static inline sTree* process_one_element(cache_line* cp,
  *
  *-----------------------------------------------------------------------------
  */
-static inline sTree* process_one_element_shards(cache_line* cp,
+static inline sTree* process_one_element_shards(request_t* cp,
                                          sTree* splay_tree,
                                          GHashTable* hash_table,
                                          guint64 ts,
                                          gint64* reuse_dist, double sample_ratio){
     gpointer gp;
 
-    gp = g_hash_table_lookup(hash_table, cp->item_p);
+    gp = g_hash_table_lookup(hash_table, cp->label_ptr);
 
     sTree* newtree;
     if (gp == NULL){
@@ -1154,16 +1154,16 @@ static inline sTree* process_one_element_shards(cache_line* cp,
             exit(1);
         }
         *value = ts;
-        if (cp->type == 'c')
-            g_hash_table_insert(hash_table, g_strdup((gchar*)(cp->item_p)), (gpointer)value);
+        if (cp->label_type == 'c')
+            g_hash_table_insert(hash_table, g_strdup((gchar*)(cp->label_ptr)), (gpointer)value);
 
-        else if (cp->type == 'l'){
+        else if (cp->label_type == 'l'){
             gint64* key = g_new(gint64, 1);
-            *key = *(guint64*)(cp->item_p);
+            *key = *(guint64*)(cp->label_ptr);
             g_hash_table_insert(hash_table, (gpointer)(key), (gpointer)value);
         }
         else{
-            ERROR("unknown cache line content type: %c\n", cp->type);
+            ERROR("unknown cache line content label_type: %c\n", cp->label_type);
             exit(1);
         }
         *reuse_dist = -1;

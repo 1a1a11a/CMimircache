@@ -44,8 +44,8 @@ extern "C"
         
         
         // create cache lize struct and initialization
-        request_t* cp = new_cacheline();
-        cp->type = cache->core->data_type;
+        request_t* cp = new_req_struct();
+        cp->label_type = cache->core->data_type;
         cp->block_unit_size = (size_t) reader_thread->base->block_unit_size;
         
         guint64 N = g_array_index(break_points, guint64, order);
@@ -130,8 +130,8 @@ extern "C"
             
             
             // create cache lize struct and initialization
-            cp = new_cacheline();
-            cp->type = cache->core->data_type;
+            cp = new_req_struct();
+            cp->label_type = cache->core->data_type;
             cp->block_unit_size = (size_t) reader_thread->base->block_unit_size;
             
                         
@@ -196,8 +196,8 @@ extern "C"
         
         
         // create request struct and initialization
-        request_t* cp = new_cacheline();
-        cp->type = cache->core->data_type;
+        request_t* cp = new_req_struct();
+        cp->label_type = cache->core->data_type;
         cp->block_unit_size = (size_t) reader_thread->base->block_unit_size;
         
         
@@ -210,13 +210,13 @@ extern "C"
         gpointer item;
         GHashTable* last_access_time_ght;
         
-        if (cp->type == 'l'){
+        if (cp->label_type == 'l'){
             last_access_time_ght = g_hash_table_new_full(g_int64_hash, g_int64_equal,
                                                             simple_g_key_value_destroyer,
                                                             NULL);
         }
         
-        else { // (cp->type == 'c')
+        else { // (cp->label_type == 'c')
             last_access_time_ght = g_hash_table_new_full(g_str_hash, g_str_equal,
                                                            simple_g_key_value_destroyer,
                                                            NULL);
@@ -227,12 +227,12 @@ extern "C"
 
         while (cp->valid){
             // record last access
-            if (cp->type == 'l'){
+            if (cp->label_type == 'l'){
                 item = (gpointer)g_new(guint64, 1);
-                *(guint64*)item = *(guint64*)(cp->item_p);
+                *(guint64*)item = *(guint64*)(cp->label_ptr);
             }
             else{
-                item = (gpointer)g_strdup((gchar*)(cp->item_p));
+                item = (gpointer)g_strdup((gchar*)(cp->label_ptr));
             }
             g_hash_table_insert(last_access_time_ght, item, GUINT_TO_POINTER(cur_ts+1));
             
@@ -261,7 +261,7 @@ extern "C"
              *  in other words, this item should not be added to cache
              *  so need to find out when this item was added and reduced the size of all time after it
              */
-            while ( (long)cache->core->get_size(cache) > cache->core->size ){
+            while ( (long)cache->core->get_current_size(cache) > cache->core->size ){
                 item = cache->core->__evict_with_return(cache, cp);
                 last_ts = GPOINTER_TO_UINT(g_hash_table_lookup(last_access_time_ght, item)) - 1;
                 if (last_ts < 0){

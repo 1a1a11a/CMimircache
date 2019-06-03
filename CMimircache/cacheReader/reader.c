@@ -37,7 +37,7 @@ reader_t* setup_reader(const char* const file_loc,
                        const void* const setup_params){
     /* setup the reader struct for reading trace
      file_type: c: csv, v: vscsi, p: plain text, b: binary
-     data_type: l: guint64, c: string
+     label_type: l: guint64, c: string
      Return value: a pointer to READER struct, the returned reader
      needs to be explicitly closed by calling close_reader */
 
@@ -59,7 +59,7 @@ reader_t* setup_reader(const char* const file_loc,
     reader->base->total_num = -1;
     reader->base->block_unit_size = block_unit_size;
     reader->base->disk_sector_size = disk_sector_size;
-    reader->base->data_type = data_type;
+    reader->base->label_type = data_type;
     reader->base->init_params = NULL;
     reader->base->offset = 0;
 
@@ -102,7 +102,7 @@ reader_t* setup_reader(const char* const file_loc,
             csv_setup_Reader(file_loc, reader, setup_params);
             break;
         case PLAIN:
-            reader->base->type = 'p';
+            reader->base->trace_type = 'p';
             reader->base->file = fopen(file_loc, "r");
             if (reader->base->file == 0){
                 ERROR("open trace file %s failed: %s\n", file_loc, strerror(errno));
@@ -116,8 +116,8 @@ reader_t* setup_reader(const char* const file_loc,
             binaryReader_setup(file_loc, reader, setup_params);
             break;
         default:
-            ERROR("cannot recognize reader type, given reader type: %c\n",
-                  reader->base->type);
+            ERROR("cannot recognize reader label_type, given reader label_type: %c\n",
+                  reader->base->trace_type);
             exit(1);
             break;
     }
@@ -125,15 +125,15 @@ reader_t* setup_reader(const char* const file_loc,
     return reader;
 }
 
-void read_one_element(reader_t *const reader, cache_line_t *const c){
+void read_one_element(reader_t *const reader, request_t *const c){
     /* read one cache line from reader,
-     and store it in the pre-allocated cache_line c, current given
+     and store it in the pre-allocated request_t c, current given
      size for the element(label) is 128 bytes(cache_line_label_size).
      */
     c->ts ++;
     char *line_end = NULL;
     long line_len;
-    switch (reader->base->type) {
+    switch (reader->base->trace_type) {
         case CSV:
             csv_read_one_element(reader, c);
             break;
@@ -144,8 +144,8 @@ void read_one_element(reader_t *const reader, cache_line_t *const c){
             }
 
             find_line_ending(reader, &line_end, &line_len);
-            strncpy(c->item, reader->base->mapped_file+reader->base->offset, line_len);
-            c->item[line_len] = 0;
+            strncpy(c->label, reader->base->mapped_file+reader->base->offset, line_len);
+            c->label[line_len] = 0;
             reader->base->offset = (char*)line_end - reader->base->mapped_file;
             break;
         case VSCSI:
@@ -155,14 +155,14 @@ void read_one_element(reader_t *const reader, cache_line_t *const c){
             binary_read(reader, c);
             break;
         default:
-            ERROR("cannot recognize reader type, given reader type: %c\n",
-                  reader->base->type);
+            ERROR("cannot recognize reader label_type, given reader label_type: %c\n",
+                  reader->base->trace_type);
             exit(1);
             break;
     }
-    if (reader->base->data_type == 'l' &&
-        (reader->base->type == 'c' || reader->base->type == 'p')){
-        *(guint64*)(c->item_p) = atoll(c->item);
+    if (reader->base->label_type == 'l' &&
+        (reader->base->trace_type == 'c' || reader->base->trace_type == 'p')){
+        *(guint64*)(c->label_ptr) = atoll(c->label);
     }
 }
 
@@ -170,7 +170,7 @@ int go_back_one_line(reader_t *const reader){
     /* go back one request in the data
      return 0 on successful, non-zero otherwise
      */
-    switch (reader->base->type) {
+    switch (reader->base->trace_type) {
         case CSV:
         case PLAIN:
             if (reader->base->offset == 0)
@@ -224,8 +224,8 @@ int go_back_one_line(reader_t *const reader){
             return 0;
 
         default:
-            ERROR("cannot recognize reader type, given reader type: %c\n",
-                  reader->base->type);
+            ERROR("cannot recognize reader label_type, given reader label_type: %c\n",
+                  reader->base->trace_type);
             exit(1);
     }
 }
@@ -236,7 +236,7 @@ int go_back_two_lines(reader_t *const reader){
     /* go back two cache lines
      return 0 on successful, non-zero otherwise
      */
-    switch (reader->base->type) {
+    switch (reader->base->trace_type) {
         case CSV:
         case PLAIN:
             if (go_back_one_line(reader) == 0){
@@ -253,20 +253,20 @@ int go_back_two_lines(reader_t *const reader){
                 return -1;
             return 0;
         default:
-            ERROR("cannot recognize reader type, given reader type: %c\n",
-                  reader->base->type);
+            ERROR("cannot recognize reader label_type, given reader label_type: %c\n",
+                  reader->base->trace_type);
             exit(1);
     }
 }
 
 
 
-void read_one_element_above(reader_t *const reader, cache_line_t* c){
+void read_one_element_above(reader_t *const reader, request_t* c){
     /* read one cache line from reader precede current position,
      * in other words, read the line above current line,
      * and currently file points to either the end of current line or
      * beginning of next line.
-     then store it in the pre-allocated cache_line c, current given
+     then store it in the pre-allocated request_t c, current given
      size for the element(label) is 128 bytes(cache_line_label_size).
      after reading the new position is at the beginning of readed cache line
      in other words, this method is called for reading from end to beginngng
@@ -289,7 +289,7 @@ guint64 skip_N_elements(reader_t *const reader, const guint64 N){
      */
     guint64 count=N;
 
-    switch (reader->base->type) {
+    switch (reader->base->trace_type) {
         case CSV:
             csv_skip_N_elements(reader, N);
         case PLAIN:
@@ -302,7 +302,7 @@ guint64 skip_N_elements(reader_t *const reader, const guint64 N){
                 end = find_line_ending(reader, &line_end, &line_len);
                 reader->base->offset = (char*)line_end - reader->base->mapped_file;
                 if (end) {
-                    if (reader->base->type == 'c'){
+                    if (reader->base->trace_type == 'c'){
                         csv_params_t *params = reader->reader_params;
                         params->reader_end = TRUE;
                     }
@@ -328,8 +328,8 @@ guint64 skip_N_elements(reader_t *const reader, const guint64 N){
 
             break;
         default:
-            ERROR("cannot recognize reader type, given reader type: %c\n",
-                  reader->base->type);
+            ERROR("cannot recognize reader label_type, given reader label_type: %c\n",
+                  reader->base->trace_type);
             exit(1);
             break;
     }
@@ -339,7 +339,7 @@ guint64 skip_N_elements(reader_t *const reader, const guint64 N){
 void reset_reader(reader_t *const reader){
     /* rewind the reader back to beginning */
     reader->base->offset = 0;
-    switch (reader->base->type) {
+    switch (reader->base->trace_type) {
         case CSV:
             csv_reset_reader(reader);
         case PLAIN:
@@ -347,8 +347,8 @@ void reset_reader(reader_t *const reader){
         case VSCSI:
             break;
         default:
-            ERROR("cannot recognize reader type, given reader type: %c\n",
-                  reader->base->type);
+            ERROR("cannot recognize reader label_type, given reader label_type: %c\n",
+                  reader->base->trace_type);
             exit(1);
             break;
     }
@@ -361,7 +361,7 @@ void reader_set_read_pos(reader_t *const reader, const double pos){
      * due to above property, this function is deemed as deprecated.
      */
     reader->base->offset = (long)(reader->base->file_size * pos);
-    if (reader->base->type == 'c' || reader->base->type == 'p'){
+    if (reader->base->trace_type == 'c' || reader->base->trace_type == 'p'){
         reader->base->record_size = 0;
         /* for plain and csv file, if it points to the end, we need to rewind by 1,
          * because mapped_file+file_size-1 is the last byte
@@ -382,7 +382,7 @@ guint64 get_num_of_req(reader_t *const reader){
     // why can't reset here?
     // reset_reader(reader);
 
-    switch (reader->base->type) {
+    switch (reader->base->trace_type) {
         case CSV:
             /* same as plain text, except when has_header, it needs to reduce by 1  */
         case PLAIN:
@@ -394,7 +394,7 @@ guint64 get_num_of_req(reader_t *const reader){
                 n_req ++;
             }
             n_req++;
-            if (reader->base->type == 'c')
+            if (reader->base->trace_type == 'c')
                 if (((csv_params_t*)(reader->reader_params))->has_header)
                     n_req --;
             break;
@@ -402,8 +402,8 @@ guint64 get_num_of_req(reader_t *const reader){
         case VSCSI:
             return reader->base->total_num;
         default:
-            ERROR("cannot recognize reader type, given reader type: %c\n",
-                  reader->base->type);
+            ERROR("cannot recognize reader label_type, given reader label_type: %c\n",
+                  reader->base->trace_type);
             exit(1);
             break;
     }
@@ -417,8 +417,8 @@ reader_t* clone_reader(reader_t *const reader_in){
     /* this function clone the given reader to give an exactly same reader */
 
     reader_t *const reader = setup_reader(reader_in->base->file_loc,
-                                          reader_in->base->type,
-                                          reader_in->base->data_type,
+                                          reader_in->base->trace_type,
+                                          reader_in->base->label_type,
                                           reader_in->base->block_unit_size,
                                           reader_in->base->disk_sector_size,
                                           reader_in->base->init_params);
@@ -430,7 +430,7 @@ reader_t* clone_reader(reader_t *const reader_in){
     reader->base->offset = reader_in->base->offset;
     reader->base->total_num = reader_in->base->total_num;
 
-    if (reader->base->type == CSV){
+    if (reader->base->trace_type == CSV){
         csv_params_t* params = reader->reader_params;
         csv_params_t* params_in = reader_in->reader_params;
 
@@ -451,7 +451,7 @@ int close_reader(reader_t *const reader){
      indicate the error.  In either case no further
      access to the stream is possible.*/
 
-    switch (reader->base->type) {
+    switch (reader->base->trace_type) {
         case CSV:
             ;
             csv_params_t *params = reader->reader_params;
@@ -466,8 +466,8 @@ int close_reader(reader_t *const reader){
         case VSCSI:
             break;
         default:
-            ERROR("cannot recognize reader type, given reader type: %c\n",
-                  reader->base->type);
+            ERROR("cannot recognize reader label_type, given reader label_type: %c\n",
+                  reader->base->trace_type);
     }
 
     munmap (reader->base->mapped_file, reader->base->file_size);
@@ -514,7 +514,7 @@ int close_reader_unique(reader_t *const reader){
      indicate the error.  In either case no further
      access to the stream is possible.*/
 
-    switch (reader->base->type) {
+    switch (reader->base->trace_type) {
         case CSV:
             ;
             csv_params_t *params = reader->reader_params;
@@ -529,8 +529,8 @@ int close_reader_unique(reader_t *const reader){
         case VSCSI:
             break;
         default:
-            ERROR("cannot recognize reader type, given reader type: %c\n",
-                  reader->base->type);
+            ERROR("cannot recognize reader label_type, given reader label_type: %c\n",
+                  reader->base->trace_type);
     }
 
     if (reader->base->init_params)
@@ -563,7 +563,7 @@ int read_one_request_all_info(reader_t *const reader, void* storage){
      and store it in the pre-allocated memory pointed at storage.
      return 1 when finished or error, otherwise, return 0.
      */
-    switch (reader->base->type) {
+    switch (reader->base->trace_type) {
         case CSV:
             printf("currently c reader is not supported yet\n");
             exit(1);
@@ -584,8 +584,8 @@ int read_one_request_all_info(reader_t *const reader, void* storage){
             exit(1);
             break;
         default:
-            ERROR("cannot recognize reader type, given reader type: %c\n",
-                  reader->base->type);
+            ERROR("cannot recognize reader label_type, given reader label_type: %c\n",
+                  reader->base->trace_type);
             exit(1);
             break;
     }
@@ -594,7 +594,7 @@ int read_one_request_all_info(reader_t *const reader, void* storage){
 
 void set_no_eof(reader_t *const reader){
     // remove eof flag for reader
-    switch (reader->base->type) {
+    switch (reader->base->trace_type) {
         case CSV:
             csv_set_no_eof(reader);
             break;
@@ -603,8 +603,8 @@ void set_no_eof(reader_t *const reader){
         case VSCSI:
             break;
         default:
-            ERROR("cannot recognize reader type, given reader type: %c\n",
-                  reader->base->type);
+            ERROR("cannot recognize reader label_type, given reader label_type: %c\n",
+                  reader->base->trace_type);
             exit(1);
             break;
     }
@@ -626,47 +626,35 @@ guint64 read_one_request_size(reader_t *const reader){
 }
 
 
-cache_line_t* new_cacheline(){
-    cache_line* cp = g_new0(cache_line, 1);
-    cp->op = -1;
-    cp->size = 0;
-    cp->block_unit_size = 0;
-    cp->disk_sector_size = 0;
-    cp->valid = TRUE;
-    cp->item_p = (gpointer)cp->item;
-    cp->ts = 0;
-    cp->real_time = -1;
+request_t* new_req_struct(){
+    request_t* req = g_new0(request_t, 1);
+    req->op = -1;
+    req->size = 0;
+    req->block_unit_size = 0;
+    req->disk_sector_size = 0;
+    req->valid = TRUE;
+    req->label_ptr = (gpointer)req->label;
+    req->ts = 0;
+    req->real_time = -1;
 
-    return cp;
+    return req;
 }
 
 
-cache_line_t *copy_cache_line(cache_line_t *cp){
-    cache_line_t* cp_new = g_new0(cache_line_t, 1);
-    memcpy(cp_new, cp, sizeof(cache_line_t));
-    cp_new->item_p = (gpointer)cp_new->item;
-    return cp_new;
+request_t *copy_req(request_t *req){
+    request_t* req_new = g_new0(request_t, 1);
+    memcpy(req_new, req, sizeof(request_t));
+    req_new->label_ptr = (gpointer)req_new->label;
+    return req_new;
 }
 
 
-void destroy_cacheline(cache_line_t* cp){
+void destroy_req_struct(request_t* cp){
     if (cp->content)
         g_free(cp->content);
     g_free(cp);
 }
 
-
-request_t* new_req_struct(){
-  return new_cacheline();
-}
-
-request_t* copy_req(request_t* req){
-  return copy_cache_line(req);
-}
-
-void destroy_req_struct(request_t *req){
-  destroy_cacheline(req);
-}
 
 #ifdef __cplusplus
 }

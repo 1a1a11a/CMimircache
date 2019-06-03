@@ -28,20 +28,20 @@ struct Random_params{
 
 
 
-extern  void __Random_insert_element(struct_cache* Random, cache_line* cp);
+extern  void __Random_insert_element(cache_t* Random, request_t* cp);
 
-extern  gboolean Random_check_element(struct_cache* cache, cache_line* cp);
+extern  gboolean Random_check_element(cache_t* cache, request_t* cp);
 
-extern  void __Random_update_element(struct_cache* Random, cache_line* cp);
+extern  void __Random_update_element(cache_t* Random, request_t* cp);
 
-extern  void __Random_evict_element(struct_cache* Random, cache_line* cp);
+extern  void __Random_evict_element(cache_t* Random, request_t* cp);
 
-extern  gboolean Random_add_element(struct_cache* cache, cache_line* cp);
+extern  gboolean Random_add_element(cache_t* cache, request_t* cp);
 
-extern  void Random_destroy(struct_cache* cache);
-extern  void Random_destroy_unique(struct_cache* cache);
+extern  void Random_destroy(cache_t* cache);
+extern  void Random_destroy_unique(cache_t* cache);
 
-struct_cache* Random_init(guint64 size, char data_type, guint64 block_size, void* params);
+cache_t* Random_init(guint64 size, char data_type, guint64 block_size, void* params);
 
 
 #ifdef __cplusplus

@@ -112,30 +112,30 @@ static inline bool test_version(vscsi_version_t *test_buf,
 }
 
 
-static inline int vscsi_read_ver1(reader_t* reader, cache_line* c){
+static inline int vscsi_read_ver1(reader_t* reader, request_t* c){
     trace_v1_record_t *record = (trace_v1_record_t *)(reader->base->mapped_file
                                                       + reader->base->offset);
     c->real_time = record->ts;
     c->size = record->len;
     c->op = record->cmd;
-    *((guint64*)(c->item_p)) = record->lbn;
+    *((guint64*)(c->label_ptr)) = record->lbn;
     (reader->base->offset) += reader->base->record_size;
     return 0;
 }
 
 
-static inline int vscsi_read_ver2(reader_t* reader, cache_line* c){
+static inline int vscsi_read_ver2(reader_t* reader, request_t* c){
     trace_v2_record_t *record = (trace_v2_record_t *)(reader->base->mapped_file
                                                       + reader->base->offset);
     c->real_time = record->ts;
     c->size = record->len;
     c->op = record->cmd;
-    *((guint64*)(c->item_p)) = record->lbn;
+    *((guint64*)(c->label_ptr)) = record->lbn;
     (reader->base->offset) += reader->base->record_size;
     return 0;
 }
 
-static inline int vscsi_read(reader_t* reader, cache_line* c){
+static inline int vscsi_read(reader_t* reader, request_t* c){
     if (reader->base->offset >= reader->base->total_num
         * reader->base->record_size){
         c->valid = FALSE;
@@ -144,7 +144,7 @@ static inline int vscsi_read(reader_t* reader, cache_line* c){
     
     vscsi_params_t* params = reader->reader_params;
     
-    int (*fptr)(reader_t*, cache_line*) = NULL;
+    int (*fptr)(reader_t*, request_t*) = NULL;
     switch (params->vscsi_ver)
     {
         case VSCSI1:

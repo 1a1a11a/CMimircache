@@ -39,7 +39,7 @@ int binaryReader_setup(const char *const filename,
     reader->base->init_params = g_new(binary_init_params_t, 1);
     memcpy(reader->base->init_params, init_params, sizeof(binary_init_params_t));
 
-    reader->base->type = BINARY;
+    reader->base->trace_type = BINARY;
     reader->base->record_size = 0;
 
     reader->reader_params = g_new0(binary_params_t, 1);
@@ -119,8 +119,8 @@ int binaryReader_setup(const char *const filename,
                                 size * (init_params->label_pos - last_count_sum - 1);
             params->label_len = *cp == 's' ? count : 1;
             params->label_type = *cp;
-            // important! update data type here 
-            reader->base->data_type = *cp == 's' ? 'c' : 'l';
+            // important! update data label_type here
+            reader->base->label_type = *cp == 's' ? 'c' : 'l';
         }
 
         if (init_params->op_pos != 0 && params->op_len == 0 && init_params->op_pos <= count_sum) {

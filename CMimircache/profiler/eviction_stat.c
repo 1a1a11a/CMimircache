@@ -21,25 +21,25 @@ extern "C"
 #endif
 
 
-static gint64* get_eviction_reuse_dist(reader_t* reader, struct_cache* optimal);
-static gint64* get_eviction_freq(reader_t* reader, struct_cache* optimal, gboolean accumulative);
-//static gdouble* get_eviction_relative_freq(READER* reader, struct_cache* optimal);
-static inline sTree* process_one_element_eviction_reuse_dist(cache_line* cp, sTree* splay_tree, GHashTable* hash_table, guint64 ts, gint64* reuse_dist, gpointer evicted);
+static gint64* get_eviction_reuse_dist(reader_t* reader, cache_t* optimal);
+static gint64* get_eviction_freq(reader_t* reader, cache_t* optimal, gboolean accumulative);
+//static gdouble* get_eviction_relative_freq(READER* reader, cache_t* optimal);
+static inline sTree* process_one_element_eviction_reuse_dist(request_t* cp, sTree* splay_tree, GHashTable* hash_table, guint64 ts, gint64* reuse_dist, gpointer evicted);
 
 
 
-static void traverse_trace(reader_t* reader, struct_cache* cache){
+static void traverse_trace(reader_t* reader, cache_t* cache){
     /** this function traverse the trace file, add each request to cache, just like a cache simulation 
      *
      **/
     
     // create cache line struct and initialization
-    cache_line* cp = new_cacheline();
+    request_t* cp = new_req_struct();
     
-    cp->type = cache->core->data_type;
+    cp->label_type = cache->core->data_type;
     cp->block_unit_size = (size_t) reader->base->block_unit_size;
     
-    gboolean (*add_element)(struct cache*, cache_line* cp);
+    gboolean (*add_element)(struct cache*, request_t* cp);
     add_element = cache->core->add_element;
     
     read_one_element(reader, cp);
@@ -57,7 +57,7 @@ static void traverse_trace(reader_t* reader, struct_cache* cache){
 
 
 
-gint64* eviction_stat(reader_t* reader_in, struct_cache* cache, evict_stat_type stat_type){
+gint64* eviction_stat(reader_t* reader_in, cache_t* cache, evict_stat_type stat_type){
     /** this function first traverse the trace file to generate a list of evicted requests,
      ** then again traverse the trace file to obtain the statistics of evicted requests 
      **/ 
@@ -68,7 +68,7 @@ gint64* eviction_stat(reader_t* reader_in, struct_cache* cache, evict_stat_type 
     if (reader_in->base->total_num == -1)
         get_num_of_req(reader_in);
     
-    if (reader_in->base->data_type == 'l')
+    if (reader_in->base->label_type == 'l')
         cache->core->eviction_array = g_new0(guint64, reader_in->base->total_num);
     else
         cache->core->eviction_array = g_new0(gchar*, reader_in->base->total_num);
@@ -90,7 +90,7 @@ gint64* eviction_stat(reader_t* reader_in, struct_cache* cache, evict_stat_type 
         return NULL;
     }
     else{
-        ERROR("unsupported stat type\n");
+        ERROR("unsupported stat label_type\n");
         exit(1);
     }
 }
@@ -109,7 +109,7 @@ gdouble* eviction_stat_over_time(reader_t* reader_in, char mode, guint64 time_in
 }
 
 
-gint64* get_eviction_freq(reader_t* reader, struct_cache* optimal, gboolean accumulative){
+gint64* get_eviction_freq(reader_t* reader, cache_t* optimal, gboolean accumulative){
     /** if insert then evict, its freq should be 1,
         in other words, the smallest freq should be 1, 
         if there is no eviction at ts, then it is -1.
@@ -123,25 +123,25 @@ gint64* get_eviction_freq(reader_t* reader, struct_cache* optimal, gboolean accu
     
     
     // create cache line struct and initializa
-    cache_line* cp = new_cacheline();
-    cp->type = reader->base->data_type;
+    request_t* cp = new_req_struct();
+    cp->label_type = reader->base->label_type;
     
     // create hashtable
     GHashTable * hash_table;
-    if (reader->base->data_type == 'l'){
-        //        cp->type = 'l';
+    if (reader->base->label_type == 'l'){
+        //        cp->label_type = 'l';
         hash_table = g_hash_table_new_full(g_int64_hash, g_int64_equal, \
                                            (GDestroyNotify)simple_g_key_value_destroyer, \
                                            (GDestroyNotify)simple_g_key_value_destroyer);
     }
-    else if (reader->base->data_type == 'c' ){
-        //        cp->type = 'c';
+    else if (reader->base->label_type == 'c' ){
+        //        cp->label_type = 'c';
         hash_table = g_hash_table_new_full(g_str_hash, g_str_equal, \
                                            (GDestroyNotify)simple_g_key_value_destroyer, \
                                            (GDestroyNotify)simple_g_key_value_destroyer);
     }
     else{
-        ERROR("does not recognize reader data type %c\n", reader->base->data_type);
+        ERROR("does not recognize reader data label_type %c\n", reader->base->label_type);
         abort();
     }
     
@@ -149,21 +149,21 @@ gint64* get_eviction_freq(reader_t* reader, struct_cache* optimal, gboolean accu
     read_one_element(reader, cp);
 
     while (cp->valid){
-        gp = g_hash_table_lookup(hash_table, cp->item_p);
+        gp = g_hash_table_lookup(hash_table, cp->label_ptr);
         if (gp == NULL){
             // first time access
             gint64 *value = g_new(gint64, 1);
             *value = 1;
-            if (cp->type == 'c'){
-                g_hash_table_insert(hash_table, g_strdup((gchar*)(cp->item_p)), (gpointer)(value));
+            if (cp->label_type == 'c'){
+                g_hash_table_insert(hash_table, g_strdup((gchar*)(cp->label_ptr)), (gpointer)(value));
             }
-            else if (cp->type == 'l'){
+            else if (cp->label_type == 'l'){
                 gint64* key = g_new(gint64, 1);
-                *key = *(guint64*)(cp->item_p);
+                *key = *(guint64*)(cp->label_ptr);
                 g_hash_table_insert(hash_table, (gpointer)(key), (gpointer)(value));
             }
             else{
-                printf("unknown cache line content type: %c\n", cp->type);
+                printf("unknown cache line content label_type: %c\n", cp->label_type);
                 exit(1);
             }
         }
@@ -173,8 +173,8 @@ gint64* get_eviction_freq(reader_t* reader, struct_cache* optimal, gboolean accu
         read_one_element(reader, cp);
 
         
-        // get freq of evicted item
-        if (cp->type == 'c'){
+        // get freq of evicted label
+        if (cp->label_type == 'c'){
             if (((gchar**)eviction_array)[ts] == NULL)
                 freq_array[ts++] = -1;
             else{
@@ -186,7 +186,7 @@ gint64* get_eviction_freq(reader_t* reader, struct_cache* optimal, gboolean accu
                     *(gint64*)gp = 0;
             }
         }
-        else if (cp->type == 'l'){
+        else if (cp->label_type == 'l'){
             if ( *((guint64*)eviction_array+ts) == 0)
                 freq_array[ts++] = -1;
             else{
@@ -200,7 +200,7 @@ gint64* get_eviction_freq(reader_t* reader, struct_cache* optimal, gboolean accu
         }
     }
     
-    destroy_cacheline(cp);
+    destroy_req_struct(cp);
     g_hash_table_destroy(hash_table);
     reset_reader(reader);
     return freq_array;
@@ -211,7 +211,7 @@ gint64* get_eviction_freq(reader_t* reader, struct_cache* optimal, gboolean accu
 
 
 
-static gint64* get_eviction_reuse_dist(reader_t* reader, struct_cache* optimal){
+static gint64* get_eviction_reuse_dist(reader_t* reader, cache_t* optimal){
     /*
      * TODO: might be better to split return result, in case the hit rate array is too large
      * Is there a better way to do this? this will cause huge amount memory
@@ -227,25 +227,25 @@ static gint64* get_eviction_reuse_dist(reader_t* reader, struct_cache* optimal){
     
     
     // create cache line struct and initializa
-    cache_line* cp = new_cacheline();
-    cp->type = reader->base->data_type;
+    request_t* cp = new_req_struct();
+    cp->label_type = reader->base->label_type;
     
     // create hashtable
     GHashTable * hash_table;
-    if (reader->base->data_type == 'l'){
-        //        cp->type = 'l';
+    if (reader->base->label_type == 'l'){
+        //        cp->label_type = 'l';
         hash_table = g_hash_table_new_full(g_int64_hash, g_int64_equal, \
                                            (GDestroyNotify)simple_g_key_value_destroyer, \
                                            (GDestroyNotify)simple_g_key_value_destroyer);
     }
-    else if (reader->base->data_type == 'c' ){
-        //        cp->type = 'c';
+    else if (reader->base->label_type == 'c' ){
+        //        cp->label_type = 'c';
         hash_table = g_hash_table_new_full(g_str_hash, g_str_equal, \
                                            (GDestroyNotify)simple_g_key_value_destroyer, \
                                            (GDestroyNotify)simple_g_key_value_destroyer);
     }
     else{
-        ERROR("does not recognize reader data type %c\n", reader->base->data_type);
+        ERROR("does not recognize reader data label_type %c\n", reader->base->label_type);
         abort();
     }
     
@@ -255,7 +255,7 @@ static gint64* get_eviction_reuse_dist(reader_t* reader, struct_cache* optimal){
 
     read_one_element(reader, cp);
     
-    if (cp->type == 'l'){
+    if (cp->label_type == 'l'){
         while (cp->valid){
             splay_tree = process_one_element_eviction_reuse_dist(cp, splay_tree, hash_table, ts, &reuse_dist,
                                                       (gpointer) ((guint64*)eviction_array + ts) );
@@ -276,7 +276,7 @@ static gint64* get_eviction_reuse_dist(reader_t* reader, struct_cache* optimal){
     
     
     // clean up
-    destroy_cacheline(cp);
+    destroy_req_struct(cp);
     g_hash_table_destroy(hash_table);
     free_sTree(splay_tree);
     reset_reader(reader);
@@ -285,10 +285,10 @@ static gint64* get_eviction_reuse_dist(reader_t* reader, struct_cache* optimal){
 
 
 
-static inline sTree* process_one_element_eviction_reuse_dist(cache_line* cp, sTree* splay_tree, GHashTable* hash_table, guint64 ts, gint64* reuse_dist, gpointer evicted){
+static inline sTree* process_one_element_eviction_reuse_dist(request_t* cp, sTree* splay_tree, GHashTable* hash_table, guint64 ts, gint64* reuse_dist, gpointer evicted){
     gpointer gp;
     
-    gp = g_hash_table_lookup(hash_table, cp->item_p);
+    gp = g_hash_table_lookup(hash_table, cp->label_ptr);
     
     sTree* newtree = splay_tree;
     if (gp == NULL){
@@ -296,16 +296,16 @@ static inline sTree* process_one_element_eviction_reuse_dist(cache_line* cp, sTr
         newtree = insert(ts, splay_tree);
         gint64 *value = g_new(gint64, 1);
         *value = ts;
-        if (cp->type == 'c')
-            g_hash_table_insert(hash_table, g_strdup((gchar*)(cp->item_p)), (gpointer)value);
+        if (cp->label_type == 'c')
+            g_hash_table_insert(hash_table, g_strdup((gchar*)(cp->label_ptr)), (gpointer)value);
         
-        else if (cp->type == 'l'){
+        else if (cp->label_type == 'l'){
             gint64* key = g_new(gint64, 1);
-            *key = *(guint64*)(cp->item_p);
+            *key = *(guint64*)(cp->label_ptr);
             g_hash_table_insert(hash_table, (gpointer)(key), (gpointer)value);
         }
         else{
-            printf("unknown cache line content type: %c\n", cp->type);
+            printf("unknown cache line content label_type: %c\n", cp->label_type);
             exit(1);
         }
     }
@@ -323,7 +323,7 @@ static inline sTree* process_one_element_eviction_reuse_dist(cache_line* cp, sTr
     
     // get evicted reuse distance
     if (evicted){
-        if (cp->type == 'l')
+        if (cp->label_type == 'l')
             if (*(guint64*)evicted == 0){
                 *reuse_dist = -1;
                 return newtree;

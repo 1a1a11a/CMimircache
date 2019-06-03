@@ -42,24 +42,24 @@ typedef struct branch_list_node_data{
 
 
 
-extern gboolean LFU_fast_check_element(struct_cache* cache, cache_line* cp);
-extern gboolean LFU_fast_add_element(struct_cache* cache, cache_line* cp);
+extern gboolean LFU_fast_check_element(cache_t* cache, request_t* cp);
+extern gboolean LFU_fast_add_element(cache_t* cache, request_t* cp);
 
 
-extern void     __LFU_fast_insert_element(struct_cache* LFU_fast, cache_line* cp);
-extern void     __LFU_fast_update_element(struct_cache* LFU_fast, cache_line* cp);
-extern void     __LFU_fast_evict_element(struct_cache* LFU_fast, cache_line* cp);
-extern void*    __LFU_fast__evict_with_return(struct_cache* cache, cache_line* cp);
+extern void     __LFU_fast_insert_element(cache_t* LFU_fast, request_t* cp);
+extern void     __LFU_fast_update_element(cache_t* LFU_fast, request_t* cp);
+extern void     __LFU_fast_evict_element(cache_t* LFU_fast, request_t* cp);
+extern void*    __LFU_fast__evict_with_return(cache_t* cache, request_t* cp);
 
 
-extern void     LFU_fast_destroy(struct_cache* cache);
-extern void     LFU_fast_destroy_unique(struct_cache* cache);
+extern void     LFU_fast_destroy(cache_t* cache);
+extern void     LFU_fast_destroy_unique(cache_t* cache);
 
-struct_cache*   LFU_fast_init(guint64 size, char data_type, guint64 block_size, void* params);
+cache_t*   LFU_fast_init(guint64 size, char data_type, guint64 block_size, void* params);
 
 
-extern void     LFU_fast_remove_element(struct_cache* cache, void* data_to_remove);
-extern guint64 LFU_fast_get_size(struct_cache* cache);
+extern void     LFU_fast_remove_element(cache_t* cache, void* data_to_remove);
+extern guint64 LFU_fast_get_size(cache_t* cache);
 
 
 #ifdef __cplusplus

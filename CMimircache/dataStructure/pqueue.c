@@ -166,7 +166,7 @@ pqueue_insert(pqueue_t *q, void *d)
         q->avail = newsize;
     }
 
-    /* insert item */
+    /* insert label */
     i = q->size++;
     q->d[i] = d;
     bubble_up(q, i);

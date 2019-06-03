@@ -102,7 +102,7 @@ extern "C"
 
 
     draw_dict* heatmap(reader_t* reader,
-                       struct_cache* cache,
+                       cache_t* cache,
                        char time_mode,
                        gint64 time_interval,
                        gint64 num_of_pixel_for_time_dim,
@@ -111,8 +111,8 @@ extern "C"
                        int num_of_threads);
 
     draw_dict* differential_heatmap(reader_t* reader,
-                                    struct_cache* cache1,
-                                    struct_cache* cache2,
+                                    cache_t* cache1,
+                                    cache_t* cache2,
                                     char time_mode,
                                     gint64 time_interval,
                                     gint64 num_of_pixels,

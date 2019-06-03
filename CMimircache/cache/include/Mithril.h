@@ -162,7 +162,7 @@ extern "C"
     
     /* the data for Mithril initialization */
     typedef struct{
-        /* type of cache, LRU, FIFO, Optimal, AMP */
+        /* label_type of cache, LRU, FIFO, Optimal, AMP */
         char *cache_type;
         
         /** when we say two obj/blocks are associated,
@@ -294,7 +294,7 @@ extern "C"
     
     typedef struct{
         /* the underlying cache, like LRU, LFU, AMP */
-        struct_cache* cache;
+        cache_t* cache;
         
         /* see Mithril_init_params_t */
         gint lookahead_range;
@@ -378,8 +378,8 @@ extern "C"
      @param cp the cache line containing the request
      @return TRUE/FASLE
      */
-    extern gboolean Mithril_check_element(struct_cache* Mithril,
-                                          cache_line* cp);
+    extern gboolean Mithril_check_element(cache_t* Mithril,
+                                          request_t* cp);
     
     
     /**
@@ -392,8 +392,8 @@ extern "C"
      @param cp the cache line containing the request
      @return TRUE/FALSE
      */
-    extern gboolean Mithril_add_element(struct_cache* Mithril,
-                                        cache_line* cp);
+    extern gboolean Mithril_add_element(cache_t* Mithril,
+                                        request_t* cp);
     
     
     /**
@@ -403,8 +403,8 @@ extern "C"
      @param Mithril the cache struct
      @param cp the cache line containing the request
      */
-    extern void     __Mithril_update_element(struct_cache* Mithril,
-                                             cache_line* cp);
+    extern void     __Mithril_update_element(cache_t* Mithril,
+                                             request_t* cp);
     
     
     /**
@@ -414,8 +414,8 @@ extern "C"
      @param Mithril the cache struct
      @param cp the cache line containing the request
      */
-    extern void     __Mithril_insert_element(struct_cache* Mithril,
-                                             cache_line* cp);
+    extern void     __Mithril_insert_element(cache_t* Mithril,
+                                             request_t* cp);
     
     
     /**
@@ -426,8 +426,8 @@ extern "C"
      @param Mithril the cache struct
      @param cp the cache line containing the request
      */
-    extern void     __Mithril_evict_element(struct_cache* Mithril,
-                                            cache_line* cp);
+    extern void     __Mithril_evict_element(cache_t* Mithril,
+                                            request_t* cp);
     
     
     
@@ -436,7 +436,7 @@ extern "C"
      
      @param Mithril the cache struct
      */
-    extern void     Mithril_destroy(struct_cache* Mithril);
+    extern void     Mithril_destroy(cache_t* Mithril);
     
     
     /**
@@ -448,7 +448,7 @@ extern "C"
      
      @param Mithril the cache struct
      */
-    extern void     Mithril_destroy_unique(struct_cache* Mithril);
+    extern void     Mithril_destroy_unique(cache_t* Mithril);
     
     
     /**
@@ -456,7 +456,7 @@ extern "C"
      
      @param Mithril the cache struct
      */
-    extern void     __Mithril_mining(struct_cache* Mithril);
+    extern void     __Mithril_mining(cache_t* Mithril);
     
     /**
      the aging function, to avoid some blocks stay too lonng,
@@ -464,7 +464,7 @@ extern "C"
      
      @param Mithril the cache struct
      */
-    extern void     __Mithril_aging(struct_cache* Mithril);
+    extern void     __Mithril_aging(cache_t* Mithril);
     
     
     /**
@@ -474,7 +474,7 @@ extern "C"
      @param gp1 pointer to the first block
      @param gp2 pointer to the second block
      */
-    extern void     Mithril_add_to_prefetch_table(struct_cache* Mithril,
+    extern void     Mithril_add_to_prefetch_table(cache_t* Mithril,
                                                   gpointer gp1,
                                                   gpointer gp2);
     
@@ -488,7 +488,7 @@ extern "C"
      @param params Mithril_init_params_t
      @return the Mithril cache struct
      */
-    struct_cache*   Mithril_init(guint64 size,
+    cache_t*   Mithril_init(guint64 size,
                                  char data_type,
                                  guint64 block_size,
                                  void* params);
@@ -505,7 +505,7 @@ extern "C"
      @param cache cache struct
      @return current size
      */
-    extern guint64 Mithril_get_size(struct_cache* cache);
+    extern guint64 Mithril_get_size(cache_t* cache);
     
     
 #ifdef __cplusplus

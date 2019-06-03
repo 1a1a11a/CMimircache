@@ -31,26 +31,26 @@ typedef struct FIFOSize_params FIFOSize_params_t;
 
 
 
-extern gboolean FIFOSize_check_element(struct_cache* cache, cache_line* cp);
-extern gboolean FIFOSize_add_element(struct_cache* cache, cache_line* cp);
+extern gboolean FIFOSize_check_element(cache_t* cache, request_t* cp);
+extern gboolean FIFOSize_add_element(cache_t* cache, request_t* cp);
 
 
-extern void     __FIFOSize_insert_element(struct_cache* FIFOSize, cache_line* cp);
-extern void     __FIFOSize_update_element(struct_cache* FIFOSize, cache_line* cp);
-extern void     __FIFOSize_evict_element(struct_cache* FIFOSize, cache_line* cp);
-extern void*    __FIFOSize__evict_with_return(struct_cache* FIFOSize, cache_line* cp);
+extern void     __FIFOSize_insert_element(cache_t* FIFOSize, request_t* cp);
+extern void     __FIFOSize_update_element(cache_t* FIFOSize, request_t* cp);
+extern void     __FIFOSize_evict_element(cache_t* FIFOSize, request_t* cp);
+extern void*    __FIFOSize__evict_with_return(cache_t* FIFOSize, request_t* cp);
 
 
-extern void     FIFOSize_destroy(struct_cache* cache);
-extern void     FIFOSize_destroy_unique(struct_cache* cache);
+extern void     FIFOSize_destroy(cache_t* cache);
+extern void     FIFOSize_destroy_unique(cache_t* cache);
 
 
-struct_cache*   FIFOSize_init(guint64 size, char data_type, guint64 block_size, void* params);
+cache_t*   FIFOSize_init(guint64 size, char data_type, guint64 block_size, void* params);
 
 
-extern void     FIFOSize_remove_element(struct_cache* cache, void* data_to_remove);
-extern guint64   FIFOSize_get_size(struct_cache* cache);
-extern GHashTable* FIFOSize_get_objmap(struct_cache *cache);
+extern void     FIFOSize_remove_element(cache_t* cache, void* data_to_remove);
+extern guint64   FIFOSize_get_size(cache_t* cache);
+extern GHashTable* FIFOSize_get_objmap(cache_t *cache);
 
 
 #ifdef __cplusplus

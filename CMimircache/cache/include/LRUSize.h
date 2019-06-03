@@ -19,37 +19,33 @@ extern "C"
 #endif
 
 
-struct LRUSize_params{
+typedef struct LRUSize_params{
     GHashTable *hashtable;
     GQueue *list;
+
     gint64 ts;              // this only works when add_element is called
-};
+}LRUSize_params_t;
 
 
-typedef struct LRUSize_params LRUSize_params_t; 
+extern gboolean LRUSize_check_element(cache_t* cache, request_t* cp);
+extern gboolean LRUSize_add_element(cache_t* cache, request_t* cp);
 
 
+extern void     __LRUSize_insert_element(cache_t* LRUSize, request_t* cp);
+extern void     __LRUSize_update_element(cache_t* LRUSize, request_t* cp);
+extern void     __LRUSize_evict_element(cache_t* LRUSize, request_t* cp);
+extern void*    __LRUSize__evict_with_return(cache_t* LRUSize, request_t* cp);
 
 
-extern gboolean LRUSize_check_element(struct_cache* cache, cache_line* cp);
-extern gboolean LRUSize_add_element(struct_cache* cache, cache_line* cp);
+extern void     LRUSize_destroy(cache_t* cache);
+extern void     LRUSize_destroy_unique(cache_t* cache);
 
 
-extern void     __LRUSize_insert_element(struct_cache* LRUSize, cache_line* cp);
-extern void     __LRUSize_update_element(struct_cache* LRUSize, cache_line* cp);
-extern void     __LRUSize_evict_element(struct_cache* LRUSize, cache_line* cp);
-extern void*    __LRUSize__evict_with_return(struct_cache* LRUSize, cache_line* cp);
+cache_t*   LRUSize_init(guint64 size, char data_type, guint64 block_size, void* params);
 
 
-extern void     LRUSize_destroy(struct_cache* cache);
-extern void     LRUSize_destroy_unique(struct_cache* cache);
-
-
-struct_cache*   LRUSize_init(guint64 size, char data_type, guint64 block_size, void* params);
-
-
-extern void     LRUSize_remove_element(struct_cache* cache, void* data_to_remove);
-extern guint64   LRUSize_get_size(struct_cache* cache);
+extern void     LRUSize_remove_element(cache_t* cache, void* data_to_remove);
+extern guint64   LRUSize_get_size(cache_t* cache);
 extern GHashTable* LRUSize_get_objmap();
 
 

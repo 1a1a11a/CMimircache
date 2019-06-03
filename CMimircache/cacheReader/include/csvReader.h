@@ -56,7 +56,7 @@ void csv_setup_Reader(const char *const file_loc,
                       const csvReader_init_params *const init_params);
 
 void csv_read_one_element(reader_t *const,
-                          cache_line *const);
+                          request_t *const);
 
 int csv_go_back_one_line(reader_t*);
 

@@ -61,7 +61,7 @@ partition_t* get_partition(
 
 return_res_t** profiler_partition(
                                   reader_t* reader_in,
-                                  struct_cache* cache_in,
+                                  cache_t* cache_in,
                                   int num_of_threads_in,
                                   int bin_size_in
                                   );

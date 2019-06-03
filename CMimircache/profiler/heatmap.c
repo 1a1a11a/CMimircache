@@ -59,7 +59,7 @@ draw_dict* hm_opt_effective_size(reader_t* reader,
  *      num_of_pixels:          the number of pixels in x/y dimension,
  *                                  this is optional, if time_interval is specified,
  *                                  then this one is not needed
- *      plot_type:              the type of plot
+ *      plot_type:              the label_type of plot
  *
  *      interval_hit_ratio_b:   used in hit_ratio_start_time_end_time,
  *                                  if it is True, then the hit ratio of each pixel is not
@@ -128,7 +128,7 @@ draw_dict* heatmap(reader_t* reader,
  *      num_of_pixels:  the number of pixels in x/y dimension,
  *                      this is optional, if time_interval is specified,
  *                      then this one is not needed
- *      plot_type:      the type of plot
+ *      plot_type:      the label_type of plot
  *
  *
  *      inside hm_comp_params:
@@ -271,7 +271,7 @@ draw_dict* heatmap_computation(reader_t* reader,
     }
 
     else {
-        ERROR("unknown plot type\n");
+        ERROR("unknown plot label_type\n");
         exit(1);
     }
 
@@ -578,7 +578,7 @@ draw_dict* hm_opt_effective_size(reader_t* reader,
             memcpy(reuse_dist, reader->sdata->reuse_dist, sizeof(gint64) * reader->base->total_num);
         }
         else {
-            ERROR("unknown reuse distance type %d\n", reader->sdata->reuse_dist_type);
+            ERROR("unknown reuse distance label_type %d\n", reader->sdata->reuse_dist_type);
             abort();
         }
 
@@ -676,7 +676,7 @@ draw_dict* differential_heatmap(reader_t* reader,
                                      num_of_threads);
 
     // check cache is LRU or not
-    //    if (cache1 == NULL || cache1->core->type == e_LRU){
+    //    if (cache1 == NULL || cache1->core->label_type == e_LRU){
     //        draw_dict1 = heatmap_LRU(reader,
     //                                 cache1,
     //                                 time_mode,
@@ -697,7 +697,7 @@ draw_dict* differential_heatmap(reader_t* reader,
     //                                    num_of_threads);
     //    }
     //
-    //    if (cache2 == NULL || cache2->core->type == e_LRU){
+    //    if (cache2 == NULL || cache2->core->label_type == e_LRU){
     //        draw_dict2 = heatmap_LRU(reader,
     //                                 cache2,
     //                                 time_mode,

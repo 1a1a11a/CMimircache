@@ -34,25 +34,25 @@ typedef struct SLRU_init_params{
 
 
 
-extern gboolean SLRU_check_element(struct_cache* cache, cache_line* cp);
-extern gboolean SLRU_add_element(struct_cache* cache, cache_line* cp);
+extern gboolean SLRU_check_element(cache_t* cache, request_t* cp);
+extern gboolean SLRU_add_element(cache_t* cache, request_t* cp);
 
 
-extern void     __SLRU_insert_element(struct_cache* SLRU, cache_line* cp);
-extern void     __SLRU_update_element(struct_cache* SLRU, cache_line* cp);
-extern void     __SLRU_evict_element(struct_cache* SLRU, cache_line* cp);
-extern void*    __SLRU__evict_with_return(struct_cache* SLRU, cache_line* cp);
+extern void     __SLRU_insert_element(cache_t* SLRU, request_t* cp);
+extern void     __SLRU_update_element(cache_t* SLRU, request_t* cp);
+extern void     __SLRU_evict_element(cache_t* SLRU, request_t* cp);
+extern void*    __SLRU__evict_with_return(cache_t* SLRU, request_t* cp);
 
 
-extern void     SLRU_destroy(struct_cache* cache);
-extern void     SLRU_destroy_unique(struct_cache* cache);
+extern void     SLRU_destroy(cache_t* cache);
+extern void     SLRU_destroy_unique(cache_t* cache);
 
 
-struct_cache*   SLRU_init(guint64 size, char data_type, guint64 block_size, void* params);
+cache_t*   SLRU_init(guint64 size, char data_type, guint64 block_size, void* params);
 
 
-extern void     SLRU_remove_element(struct_cache* cache, void* data_to_remove);
-extern guint64 SLRU_get_size(struct_cache* cache);
+extern void     SLRU_remove_element(cache_t* cache, void* data_to_remove);
+extern guint64 SLRU_get_size(cache_t* cache);
 
 
 #ifdef __cplusplus

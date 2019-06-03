@@ -32,8 +32,8 @@ int vscsi_setup(const char *const filename,
         return -1;
     }
     
-    reader->base->type = 'v';
-    reader->base->data_type = 'l';
+    reader->base->trace_type = 'v';
+    reader->base->label_type = 'l';
     
     
     vscsi_version_t ver = test_vscsi_version (reader->base->mapped_file);

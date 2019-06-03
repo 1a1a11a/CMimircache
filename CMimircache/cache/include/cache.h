@@ -50,26 +50,22 @@ typedef enum {
 
 typedef struct cache_obj {
   gpointer key;
-//    char key[CACHE_LINE_LABEL_SIZE];
-//    void *content;
   guint64 size;
 } cache_obj_t;
 
-inline void cacheobj_destroyer(gpointer data) {
-  GList *node = (GList *) data;
-  cache_obj_t *cache_obj = (cache_obj_t *) node->data;
-  g_free(cache_obj);
-}
 
 struct cache_core {
   cache_type type;
+  // virtual timestamp (added on 06/02/2019)
+  guint64 ts;
+
   long size;
-  guint64 occupied_size;
+  guint64 used_size;
   char data_type;     // l, c
   long long hit_count;
   long long miss_count;
   void *cache_init_params;
-  gboolean consider_size;
+  gboolean use_block_size;
   guint64 block_size;
 
   struct cache *(*cache_init)(guint64, char, guint64, void *);
@@ -78,41 +74,41 @@ struct cache_core {
 
   void (*destroy_unique)(struct cache *);
 
-  gboolean (*add_element)(struct cache *, cache_line *);
+  gboolean (*add_element)(struct cache *, request_t *);
 
-  gboolean (*check_element)(struct cache *, cache_line *);
+  gboolean (*check_element)(struct cache *, request_t *);
 
-  // newly added 0912, may not work for all cache
-  void (*__insert_element)(struct cache *, cache_line *);
+  void (*__insert_element)(struct cache *, request_t *);
 
-  void (*__update_element)(struct cache *, cache_line *);
+  void (*__update_element)(struct cache *, request_t *);
 
-  void (*__evict_element)(struct cache *, cache_line *);
+  void (*__evict_element)(struct cache *, request_t *);
 
-  gpointer (*__evict_with_return)(struct cache *, cache_line *);
+  gpointer (*__evict_with_return)(struct cache *, request_t *);
 
-  guint64 (*get_size)(struct cache *);         // get current size of used cache
+  guint64 (*get_current_size)(struct cache *);         // get current size of used cache
 
   GHashTable* (*get_objmap)(struct cache *);     // get the hash map
 
   void (*remove_element)(struct cache *, void *);
 
-  gboolean (*add_element_only)(struct cache *, cache_line *);
+  gboolean (*add_element_only)(struct cache *, request_t *);
 
-  gboolean (*add_element_withsize)(struct cache *, cache_line *);
+  gboolean (*add_element_withsize)(struct cache *, request_t *);
   // only insert(and possibly evict) or update, do not conduct any other
   // operation, especially for those complex algorithm
 
 
+  break_point_t *bp;           // break points, same as the one in reader, just one more pointer
+  guint64 bp_pos;              // the current location in bp->array
 
   /** Jason: need to remove shared struct in cache and move all shared struct into reader **/
+  /** the fields below are not used any more, should be removed in the next major release **/
   int record_level;  // 0 not debug, 1: record evictions, 2: compare to oracle
   void *oracle;
   void *eviction_array;     // Optimal Eviction Array, either guint64* or char**
   guint64 eviction_array_len;
   guint64 evict_err;      // used for counting
-  break_point_t *bp;           // break points, same as the one in reader, just one more pointer
-  guint64 bp_pos;         // the current location in bp->array
   gdouble *evict_err_array;       // in each time interval, the eviction error array
 };
 
@@ -121,12 +117,18 @@ struct cache {
   void *cache_params;
 };
 
-typedef struct cache struct_cache;
 typedef struct cache cache_t;
 
 extern cache_t *cache_init(long long size, char data_type, guint64 block_size);
-extern void cache_destroy(struct_cache *cache);
-extern void cache_destroy_unique(struct_cache *cache);
+extern void cache_destroy(cache_t *cache);
+extern void cache_destroy_unique(cache_t *cache);
+
+
+inline void cacheobj_destroyer(gpointer data) {
+  GList *node = (GList *) data;
+  cache_obj_t *cache_obj = (cache_obj_t *) node->data;
+  g_free(cache_obj);
+}
 
 #ifdef __cplusplus
 }
