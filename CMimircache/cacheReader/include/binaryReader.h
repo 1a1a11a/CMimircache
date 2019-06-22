@@ -74,33 +74,35 @@ static inline void binary_extract(char* record, int pos, int len,
         case '?':
             WARNING("given label_type %c cannot be used for label or time\n", type);
             break;
-            
+
         case 'h':
-            *(gint16*)written_to = *(gint16*)(record + pos);
+//            *(gint16*)written_to = *(gint16*)(record + pos);
+            *(gint64*)written_to = *(gint16*)(record + pos);
             break;
         case 'H':
-            *(guint16*)written_to = *(guint16*)(record + pos);
+            *(gint64*)written_to = *(guint16*)(record + pos);
             break;
             
         case 'i':
         case 'l':
-            *(gint32*)written_to = *(gint32*)(record + pos);
+            *(gint64*)written_to = *(gint32*)(record + pos);
             break;
 
         case 'I':
         case 'L':
-            *(guint32*)written_to = *(guint32*)(record + pos);
+            *(gint64*)written_to = *(guint32*)(record + pos);
             break;
             
         case 'q':
             *(gint64*)written_to = *(gint64*)(record + pos);
             break;
         case 'Q':
-            *(guint64*)written_to = *(guint64*)(record + pos);
+            *(gint64*)written_to = *(guint64*)(record + pos);
             break;
             
         case 'f':
             *(float*)written_to = *(float*)(record + pos);
+            *(double*)written_to = *(float*)(record + pos);
             break;
             
         case 'd':
@@ -138,6 +140,7 @@ static inline int binary_read(reader_t* reader, request_t* cp){
     if (params->real_time_type){
         binary_extract(record, params->real_time_pos, params->real_time_len,
                        params->real_time_type, &(cp->real_time));
+      printf("real time type %c %d %lld\n", params->real_time_type, cp->real_time, cp->real_time);
     }
     if (params->size_type){
         binary_extract(record, params->size_pos, params->size_len,

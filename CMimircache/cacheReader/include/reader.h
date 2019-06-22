@@ -63,8 +63,8 @@ struct cache_line {
   char label_type; /* label_type of content can be either guint64(l) or char*(c)
                     */
 
-  guint64 ts; /* deprecated, should not use, virtual timestamp */
-  guint64 size;
+  gint64 ts; /* deprecated, should not use, virtual timestamp */
+  gint64 size;
   gint64 real_time;
   // used to check whether current request is a valid request
   gboolean valid;
