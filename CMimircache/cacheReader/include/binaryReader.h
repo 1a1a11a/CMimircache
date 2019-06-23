@@ -140,7 +140,6 @@ static inline int binary_read(reader_t* reader, request_t* cp){
     if (params->real_time_type){
         binary_extract(record, params->real_time_pos, params->real_time_len,
                        params->real_time_type, &(cp->real_time));
-      printf("real time type %c %d %lld\n", params->real_time_type, cp->real_time, cp->real_time);
     }
     if (params->size_type){
         binary_extract(record, params->size_pos, params->size_len,

@@ -9,6 +9,12 @@
 #ifndef CACHE_H
 #define CACHE_H
 
+
+//#define TRACK_EVICTION_AGE
+#ifdef TRACK_EVICTION_AGE
+  #define TRACK_ACCESS_TIME
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -51,6 +57,10 @@ typedef enum {
 typedef struct cache_obj {
   gpointer key;
   guint64 size;
+  // add this only when necessary, otherwise it will add a lot of memory overhead
+#ifdef TRACK_ACCESS_TIME
+  guint64 access_time;
+#endif
 } cache_obj_t;
 
 

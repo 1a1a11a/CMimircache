@@ -22,8 +22,14 @@ extern "C"
 typedef struct LRUSize_params{
     GHashTable *hashtable;
     GQueue *list;
-
     gint64 ts;              // this only works when add_element is called
+
+#ifdef TRACK_EVICTION_AGE
+  GHashTable *last_access_rtime_map;
+  GHashTable *last_access_vtime_map;
+  FILE* eviction_age_ofile;
+#endif
+
 }LRUSize_params_t;
 
 
