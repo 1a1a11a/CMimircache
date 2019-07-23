@@ -46,7 +46,6 @@ extern "C" {
 #define VSCSI 'v'
 #define BINARY 'b'
 
-typedef enum { UNKNOWN_OP } operation_t;
 
 // label_type, this name will be changed to label_type
 typedef enum { LB_NUM, LB_STR } label_t;
@@ -69,7 +68,9 @@ struct cache_line {
   // used to check whether current request is a valid request
   gboolean valid;
 
-  operation_t op;
+  gint64 op;
+  gint64 unused_param1;
+  gint64 unused_param2;
 
   size_t block_unit_size;
   size_t disk_sector_size;

@@ -636,6 +636,8 @@ request_t* new_req_struct(){
     req->label_ptr = (gpointer)req->label;
     req->ts = 0;
     req->real_time = -1;
+    req->unused_param1 = -1;
+    req->unused_param2 = -1;
 
     return req;
 }
