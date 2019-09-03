@@ -54,9 +54,6 @@ void __LRUSize_update_element(cache_t *cache, request_t *req) {
   LRUSize_params_t *LRUSize_params = (struct LRUSize_params *) (cache->cache_params);
   GList *node = (GList *) g_hash_table_lookup(LRUSize_params->hashtable, req->label_ptr);
 
-//  g_hash_table_foreach(LRUSize_params->hashtable, _objmap_aux, GUINT_TO_POINTER(cache->core->ts));
-
-
   cache_obj_t *cache_obj = node->data;
   if (cache->core->used_size < ((cache_obj_t *) (node->data))->size) {
     ERROR("occupied cache size %llu smaller than object size %llu\n",
