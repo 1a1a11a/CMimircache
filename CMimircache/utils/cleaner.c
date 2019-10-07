@@ -24,6 +24,13 @@ void simple_g_key_value_destroyer(gpointer data) {
     g_free(data);
 }
 
+void cacheobj_destroyer(gpointer data) {
+  cache_obj_t *cache_obj = (cache_obj_t*) data;
+  g_free(cache_obj->extra_data);
+  g_free(data);
+}
+
+
 void g_slist_destroyer(gpointer data){
 //    if (data!=NULL)
         g_slist_free_full((GSList*)data, simple_g_key_value_destroyer);

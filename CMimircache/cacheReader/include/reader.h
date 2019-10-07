@@ -72,6 +72,8 @@ struct cache_line {
   gint64 unused_param1;
   gint64 unused_param2;
 
+  void* extra_data;
+
   size_t block_unit_size;
   size_t disk_sector_size;
 

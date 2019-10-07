@@ -57,6 +57,7 @@ typedef enum {
 typedef struct cache_obj {
   gpointer key;
   guint64 size;
+  void* extra_data;
   // add this only when necessary, otherwise it will add a lot of memory overhead
 #ifdef TRACK_ACCESS_TIME
   guint64 access_time;
@@ -87,6 +88,10 @@ struct cache_core {
   gboolean (*add_element)(struct cache *, request_t *);
 
   gboolean (*check_element)(struct cache *, request_t *);
+
+  void* (*get_cached_data)(struct cache *, request_t*);
+
+  void (*update_cached_data)(struct cache*, request_t*, void*);
 
   void (*__insert_element)(struct cache *, request_t *);
 
@@ -134,7 +139,7 @@ extern void cache_destroy(cache_t *cache);
 extern void cache_destroy_unique(cache_t *cache);
 
 
-inline void cacheobj_destroyer(gpointer data) {
+inline void glist_cacheobj_destroyer(gpointer data) {
   GList *node = (GList *) data;
   cache_obj_t *cache_obj = (cache_obj_t *) node->data;
   g_free(cache_obj);

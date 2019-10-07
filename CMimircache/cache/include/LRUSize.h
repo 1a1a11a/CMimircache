@@ -33,14 +33,15 @@ typedef struct LRUSize_params{
 }LRUSize_params_t;
 
 
-extern gboolean LRUSize_check_element(cache_t* cache, request_t* cp);
-extern gboolean LRUSize_add_element(cache_t* cache, request_t* cp);
+extern gboolean LRUSize_check_element(cache_t* cache, request_t* req);
+extern gboolean LRUSize_add_element(cache_t* cache, request_t* req);
+extern void* LRUSize_get_cached_data(cache_t *cache, request_t *req);
+extern void LRUSize_update_cached_data(cache_t* cache, request_t* req, void* extra_data);
 
-
-extern void     __LRUSize_insert_element(cache_t* LRUSize, request_t* cp);
-extern void     __LRUSize_update_element(cache_t* LRUSize, request_t* cp);
-extern void     __LRUSize_evict_element(cache_t* LRUSize, request_t* cp);
-extern void*    __LRUSize__evict_with_return(cache_t* LRUSize, request_t* cp);
+extern void     __LRUSize_insert_element(cache_t* LRUSize, request_t* req);
+extern void     __LRUSize_update_element(cache_t* LRUSize, request_t* req);
+extern void     __LRUSize_evict_element(cache_t* LRUSize, request_t* req);
+extern void*    __LRUSize__evict_with_return(cache_t* LRUSize, request_t* req);
 
 
 extern void     LRUSize_destroy(cache_t* cache);

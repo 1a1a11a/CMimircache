@@ -23,6 +23,7 @@ void __LRUSize_insert_element(cache_t *cache, request_t *req) {
       (struct LRUSize_params *) (cache->cache_params);
   cache_obj_t *cache_obj = g_new(cache_obj_t, 1);
   cache_obj->size = req->size;
+  cache_obj->extra_data = req->extra_data;
 #ifdef TRACK_ACCESS_TIME
     cache_obj->access_time = cache->core->ts;
 #endif
@@ -64,11 +65,29 @@ void __LRUSize_update_element(cache_t *cache, request_t *req) {
   cache->core->used_size -= cache_obj->size;
   cache->core->used_size += req->size;
   cache_obj->size = req->size;
+  // we can't update extra_data here, otherwise, the old extra_data will be (memory) leaked
+  // cache_obj->extra_data = req->extra_data;
 #ifdef TRACK_ACCESS_TIME
   cache_obj->access_time = cache->core->ts;
 #endif
   g_queue_unlink(LRUSize_params->list, node);
   g_queue_push_tail_link(LRUSize_params->list, node);
+}
+
+void LRUSize_update_cached_data(cache_t* cache, request_t* req, void* extra_data){
+  LRUSize_params_t *LRUSize_params = (struct LRUSize_params *) (cache->cache_params);
+  GList *node = (GList *) g_hash_table_lookup(LRUSize_params->hashtable, req->label_ptr);
+  cache_obj_t *cache_obj = node->data;
+  if (cache_obj->extra_data != NULL)
+    g_free(cache_obj->extra_data);
+  cache_obj->extra_data = extra_data;
+}
+
+void* LRUSize_get_cached_data(cache_t *cache, request_t *req) {
+  LRUSize_params_t *LRUSize_params = (struct LRUSize_params *) (cache->cache_params);
+  GList *node = (GList *) g_hash_table_lookup(LRUSize_params->hashtable, req->label_ptr);
+  cache_obj_t *cache_obj = node->data;
+  return cache_obj->extra_data;
 }
 
 void __LRUSize_evict_element(cache_t *cache, request_t *req) {
@@ -186,8 +205,8 @@ void LRUSize_destroy(cache_t *cache) {
       (struct LRUSize_params *) (cache->cache_params);
 
   g_hash_table_destroy(LRUSize_params->hashtable);
-  //    g_queue_free(LRUSize_params->list);
-  g_queue_free_full(LRUSize_params->list, simple_g_key_value_destroyer);
+//  g_queue_free_full(LRUSize_params->list, simple_g_key_value_destroyer);
+  g_queue_free_full(LRUSize_params->list, cacheobj_destroyer);
   //    cache_destroy(cache);
 }
 
@@ -216,6 +235,9 @@ cache_t *LRUSize_init(guint64 size, char data_type, guint64 block_size,
   cache->core->destroy_unique = LRUSize_destroy_unique;
   cache->core->add_element = LRUSize_add_element;
   cache->core->check_element = LRUSize_check_element;
+  cache->core->get_cached_data = LRUSize_get_cached_data;
+  cache->core->update_cached_data = LRUSize_update_cached_data;
+
   cache->core->__insert_element = __LRUSize_insert_element;
   cache->core->__update_element = __LRUSize_update_element;
   cache->core->__evict_element = __LRUSize_evict_element;

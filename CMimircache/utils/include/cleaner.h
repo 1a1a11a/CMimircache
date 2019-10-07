@@ -12,6 +12,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <glib.h>
+#include "cache.h"
+
 
 #ifdef __cplusplus
 extern "C"
@@ -21,6 +23,7 @@ extern "C"
 
 void simple_key_value_destroyer(gpointer data);
 void simple_g_key_value_destroyer(gpointer data);
+void cacheobj_destroyer(gpointer data);
 void g_slist_destroyer(gpointer data);
 void gqueue_destroyer(gpointer data);
 void pqueue_node_destroyer(gpointer data);

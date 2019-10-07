@@ -638,6 +638,7 @@ request_t* new_req_struct(){
     req->real_time = -1;
     req->unused_param1 = -1;
     req->unused_param2 = -1;
+    req->extra_data = NULL;
 
     return req;
 }
