@@ -28,6 +28,11 @@ typedef struct LRUSize_params{
   GHashTable *last_access_rtime_map;
   GHashTable *last_access_vtime_map;
   FILE* eviction_age_ofile;
+
+  int eviction_cnt;
+  long long logical_eviction_age_sum;
+  long long real_eviction_age_sum;
+  long long last_output_ts;
 #endif
 
 }LRUSize_params_t;

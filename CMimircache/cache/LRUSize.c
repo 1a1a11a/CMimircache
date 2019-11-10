@@ -19,8 +19,7 @@ extern "C" {
 
 
 void __LRUSize_insert_element(cache_t *cache, request_t *req) {
-  LRUSize_params_t *LRUSize_params =
-      (struct LRUSize_params *) (cache->cache_params);
+  LRUSize_params_t *LRUSize_params = (struct LRUSize_params *) (cache->cache_params);
   cache_obj_t *cache_obj = g_new(cache_obj_t, 1);
   cache_obj->size = req->size;
   cache_obj->extra_data = req->extra_data;
@@ -38,9 +37,6 @@ void __LRUSize_insert_element(cache_t *cache, request_t *req) {
 
   GList *node = g_list_alloc();
   node->data = cache_obj;
-
-//  g_hash_table_foreach(LRUSize_params->hashtable, _objmap_aux, GUINT_TO_POINTER(cache->core->ts));
-
   g_queue_push_tail_link(LRUSize_params->list, node);
   g_hash_table_insert(LRUSize_params->hashtable, cache_obj->key,
                       (gpointer) node);
@@ -56,16 +52,16 @@ void __LRUSize_update_element(cache_t *cache, request_t *req) {
   GList *node = (GList *) g_hash_table_lookup(LRUSize_params->hashtable, req->label_ptr);
 
   cache_obj_t *cache_obj = node->data;
-  if (cache->core->used_size < ((cache_obj_t *) (node->data))->size) {
+  if (cache->core->used_size < cache_obj->size) {
     ERROR("occupied cache size %llu smaller than object size %llu\n",
           (unsigned long long) cache->core->used_size,
-          (unsigned long long) ((cache_obj_t *) (node->data))->size);
+          (unsigned long long) cache_obj->size);
     abort();
   }
   cache->core->used_size -= cache_obj->size;
   cache->core->used_size += req->size;
   cache_obj->size = req->size;
-  // we can't update extra_data here, otherwise, the old extra_data will be (memory) leaked
+  // we shouldn't update extra_data here, otherwise, the old extra_data will be (memory) leaked
   // cache_obj->extra_data = req->extra_data;
 #ifdef TRACK_ACCESS_TIME
   cache_obj->access_time = cache->core->ts;
@@ -109,15 +105,32 @@ void __LRUSize_evict_element(cache_t *cache, request_t *req) {
       LRUSize_params->last_access_rtime_map, cache_obj->key));
   gint last_logical_ts = GPOINTER_TO_INT(g_hash_table_lookup(
       LRUSize_params->last_access_vtime_map, cache_obj->key));
+  g_hash_table_remove(LRUSize_params->last_access_rtime_map, cache_obj->key);
+  g_hash_table_remove(LRUSize_params->last_access_vtime_map, cache_obj->key);
+
   gint eviction_age_realtime = req->real_time - last_real_ts;
   gint eviction_age_logical_time = LRUSize_params->ts - last_logical_ts;
-  fprintf(LRUSize_params->eviction_age_ofile, "%llu: %lld: %d: %d\n",
-          *(guint64 *)cache_obj->key, LRUSize_params->ts,
-          eviction_age_logical_time, eviction_age_realtime);
+  LRUSize_params->logical_eviction_age_sum += eviction_age_logical_time;
+  LRUSize_params->real_eviction_age_sum += eviction_age_realtime;
+  LRUSize_params->eviction_cnt ++;
+
+  if (req->real_time % 100 == 0 && req->real_time != LRUSize_params->last_output_ts){
+    fprintf(LRUSize_params->eviction_age_ofile, "%lld-%lld: %ld-%ld\n",
+            (long long) req->real_time,
+            (long long) LRUSize_params->ts,
+            (long)LRUSize_params->logical_eviction_age_sum/LRUSize_params->eviction_cnt,
+            (long)LRUSize_params->real_eviction_age_sum/LRUSize_params->eviction_cnt);
+    LRUSize_params->eviction_cnt = 0;
+    LRUSize_params->logical_eviction_age_sum = 0;
+    LRUSize_params->real_eviction_age_sum = 0;
+    LRUSize_params->last_output_ts = req->real_time;
+  }
 #endif
 
   cache->core->used_size -= cache_obj->size;
   g_hash_table_remove(LRUSize_params->hashtable, (gconstpointer) cache_obj->key);
+  if (cache_obj->extra_data)
+    g_free(cache_obj->extra_data);
   g_free(cache_obj);
 }
 
@@ -149,6 +162,8 @@ gpointer __LRUSize__evict_with_return(cache_t *cache, request_t *req) {
 
   g_hash_table_remove(LRUSize_params->hashtable,
                       (gconstpointer) (cache_obj->key));
+  if (cache_obj->extra_data)
+    g_free(cache_obj->extra_data);
   g_free(cache_obj);
   return evicted_key;
 }
@@ -174,8 +189,6 @@ gboolean LRUSize_add_element(cache_t *cache, request_t *req) {
 
 
   gboolean exist = LRUSize_check_element(cache, req);
-
-
   if (req->size <= cache->core->size){
     if (exist)
       __LRUSize_update_element(cache, req);
@@ -184,18 +197,13 @@ gboolean LRUSize_add_element(cache_t *cache, request_t *req) {
 
     while (cache->core->used_size > cache->core->size)
       __LRUSize_evict_element(cache, req);
+  } else {
+    WARNING("obj size %ld larger than cache size %ld\n", (long)(req->size), cache->core->size);
   }
+
 
   LRUSize_params->ts++;
   cache->core->ts += 1;
-
-
-//  if (cache->core->ts > 540){
-//    guint64 key = 502;
-//    GList *node = (GList *) g_hash_table_lookup(LRUSize_params->hashtable, &key);
-//    cache_obj_t *cache_obj = node->data;
-//    printf("502 access_time %llu %llu %llu %p\n", cache_obj->access_time, *(guint64*)(cache_obj->key), cache_obj->size, cache_obj);
-//  }
 
   return exist;
 }
@@ -259,6 +267,10 @@ cache_t *LRUSize_init(guint64 size, char data_type, guint64 block_size,
   LRUSize_params->list = g_queue_new();
 
 #ifdef TRACK_EVICTION_AGE
+  LRUSize_params->eviction_cnt = 0;
+  LRUSize_params->last_output_ts = 0;
+  LRUSize_params->logical_eviction_age_sum = 0;
+  LRUSize_params->real_eviction_age_sum = 0;
   LRUSize_params->eviction_age_ofile = fopen((char *)params, "w");
   LRUSize_params->last_access_rtime_map = g_hash_table_new_full(
       g_int64_hash, g_int64_equal, simple_g_key_value_destroyer, NULL);
